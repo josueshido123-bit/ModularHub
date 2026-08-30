@@ -1,0 +1,90 @@
+/**
+ * Settings Panel Styles
+ */
+
+.settings-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    width: 100%;
+    max-width: 600px;
+}
+
+.settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+}
+
+.settings-section {
+    padding-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.settings-section h3 {
+    margin-bottom: var(--space-lg);
+    font-size: var(--font-size-lg);
+}
+
+.settings-group {
+    margin-bottom: var(--space-lg);
+}
+
+.settings-group:last-child {
+    margin-bottom: 0;
+}
+
+.settings-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    cursor: pointer;
+}
+
+.settings-checkbox input[type="checkbox"] {
+    margin-top: var(--space-xs);
+    cursor: pointer;
+    width: auto;
+    padding: 0;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    accent-color: var(--color-primary);
+}
+
+.settings-checkbox span {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.settings-checkbox span small {
+    display: block;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+    font-weight: normal;
+}
+
+.settings-description {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-md);
+}
+
+.settings-description.settings-warning {
+    color: var(--color-warning);
+}
+
+.settings-group .btn {
+    margin-right: var(--space-md);
+}
+
+@media (max-width: 768px) {
+    .settings-panel {
+        max-width: 100%;
+    }
+}
