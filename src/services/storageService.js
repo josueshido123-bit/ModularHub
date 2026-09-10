@@ -8,8 +8,18 @@
 class StorageService {
     constructor() {
         this.prefix = 'simpledash_';
+        this.accountKey = 'accounts';
         this.listeners = new Map(); // For observer pattern
+        this.currentAccount = this.loadAccountMeta().currentAccount || 'guest';
     }
+
+    loadAccountMeta() { try { return JSON.parse(localStorage.getItem(this.prefix + this.accountKey)) || { currentAccount: 'guest', accounts: [] }; } catch { return { currentAccount: 'guest', accounts: [] }; } }
+    saveAccountMeta(meta) { localStorage.setItem(this.prefix + this.accountKey, JSON.stringify(meta)); }
+    scopedKey(key, account = this.currentAccount) { return `${this.prefix}account_${encodeURIComponent(account)}_${key}`; }
+    getCurrentAccount() { const meta = this.loadAccountMeta(); return meta.accounts.find(account => account.id === this.currentAccount) || { id: 'guest', email: 'Guest', isGuest: true }; }
+    createAccount(email, password) { const normalized = email.trim().toLowerCase(); if (!normalized || password.length < 6) throw new Error('Use a valid email and a password with at least 6 characters.'); const meta = this.loadAccountMeta(); if (meta.accounts.some(account => account.email === normalized)) throw new Error('An account with that email already exists.'); const account = { id: normalized, email: normalized, password }; const guestPrefix = this.scopedKey('', 'guest'); Object.keys(localStorage).filter(key => (key.startsWith(this.prefix) && !key.startsWith(this.prefix + 'account_') && key !== this.prefix + this.accountKey) || key.startsWith(guestPrefix)).forEach(key => { const dataKey = key.startsWith(guestPrefix) ? key.slice(guestPrefix.length) : key.slice(this.prefix.length); localStorage.setItem(this.scopedKey(dataKey, account.id), localStorage.getItem(key)); }); meta.accounts.push(account); meta.currentAccount = account.id; this.currentAccount = account.id; this.saveAccountMeta(meta); return account; }
+    login(email, password) { const normalized = email.trim().toLowerCase(); const account = this.loadAccountMeta().accounts.find(item => item.email === normalized && item.password === password); if (!account) throw new Error('Email or password is incorrect.'); const meta = this.loadAccountMeta(); meta.currentAccount = account.id; this.currentAccount = account.id; this.saveAccountMeta(meta); return account; }
+    useGuestAccount() { const meta = this.loadAccountMeta(); meta.currentAccount = 'guest'; this.currentAccount = 'guest'; this.saveAccountMeta(meta); }
 
     /**
      * Save data to storage
@@ -18,7 +28,7 @@ class StorageService {
      */
     save(key, value) {
         try {
-            const fullKey = this.prefix + key;
+            const fullKey = this.scopedKey(key);
             const serialized = JSON.stringify(value);
             localStorage.setItem(fullKey, serialized);
             this.notifyListeners(key, value);
@@ -37,8 +47,9 @@ class StorageService {
      */
     load(key, defaultValue = null) {
         try {
-            const fullKey = this.prefix + key;
-            const data = localStorage.getItem(fullKey);
+            const fullKey = this.scopedKey(key);
+            let data = localStorage.getItem(fullKey);
+            if (data === null && this.currentAccount === 'guest') data = localStorage.getItem(this.prefix + key);
             return data ? JSON.parse(data) : defaultValue;
         } catch (error) {
             console.error(`Failed to load ${key}:`, error);
@@ -52,8 +63,7 @@ class StorageService {
      */
     remove(key) {
         try {
-            const fullKey = this.prefix + key;
-            localStorage.removeItem(fullKey);
+            localStorage.removeItem(this.scopedKey(key));
             this.notifyListeners(key, null);
             return true;
         } catch (error) {
@@ -69,7 +79,7 @@ class StorageService {
         try {
             const keys = Object.keys(localStorage);
             keys.forEach(key => {
-                if (key.startsWith(this.prefix)) {
+                if (key.startsWith(this.scopedKey(''))) {
                     localStorage.removeItem(key);
                 }
             });
@@ -122,8 +132,8 @@ class StorageService {
      */
     getAllKeys() {
         const keys = Object.keys(localStorage);
-        return keys.filter(k => k.startsWith(this.prefix))
-                   .map(k => k.substring(this.prefix.length));
+        const scoped = this.scopedKey('');
+        return keys.filter(k => k.startsWith(scoped)).map(k => k.substring(scoped.length));
     }
 
     /**

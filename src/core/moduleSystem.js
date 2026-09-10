@@ -144,16 +144,18 @@ class ModuleSystem {
         modal.appendChild(content);
 
         // Close button handler
-        header.querySelector('.module-modal-close').addEventListener('click', () => {
-            modal.classList.remove('show');
+        const closeModal = () => {
+            if (modal.classList.contains('closing')) return;
+            modal.classList.add('closing');
             setTimeout(() => modal.remove(), 300);
-        });
+        };
+
+        header.querySelector('.module-modal-close').addEventListener('click', closeModal);
 
         // Close on backdrop click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                modal.classList.remove('show');
-                setTimeout(() => modal.remove(), 300);
+                closeModal();
             }
         });
 

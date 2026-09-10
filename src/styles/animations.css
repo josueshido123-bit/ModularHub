@@ -34,6 +34,32 @@
 .module-card:nth-child(4) { animation-delay: 250ms; }
 .module-card:nth-child(5) { animation-delay: 300ms; }
 
+/* Menu and modal closing animations */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes modalSlideOut {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.97); }
+}
+
+.module-modal.closing,
+.modal.closing,
+.wishlist-form-modal.is-closing,
+.wishlist-detail-modal.is-closing {
+    animation: fadeOut 220ms ease-in forwards;
+    pointer-events: none;
+}
+
+.module-modal.closing .module-modal-content,
+.modal.closing .modal-content,
+.wishlist-form-modal.is-closing .wishlist-form-panel,
+.wishlist-detail-modal.is-closing .wishlist-detail-panel {
+    animation: modalSlideOut 220ms ease-in forwards;
+}
+
 /* Balance Amount Animations */
 @keyframes balanceFloat {
     0%, 100% {
@@ -59,13 +85,39 @@
 .transaction-item:nth-child(4) { animation-delay: 150ms; }
 .transaction-item:nth-child(5) { animation-delay: 200ms; }
 
+/* Wishlist catalogue and history animations */
+@keyframes wishlistItemEnter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.wishlist-card,
+.wishlist-history-row {
+    animation: wishlistItemEnter 300ms ease-out both;
+}
+
+.wishlist-card:nth-child(2),
+.wishlist-history-row:nth-child(2) { animation-delay: 40ms; }
+.wishlist-card:nth-child(3),
+.wishlist-history-row:nth-child(3) { animation-delay: 80ms; }
+.wishlist-card:nth-child(4),
+.wishlist-history-row:nth-child(4) { animation-delay: 120ms; }
+.wishlist-card:nth-child(5),
+.wishlist-history-row:nth-child(5) { animation-delay: 160ms; }
+
 /* Button Animations */
 @keyframes buttonHoverGlow {
     from {
-        box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 40%, transparent);
     }
     to {
-        box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+        box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 60%, transparent);
     }
 }
 

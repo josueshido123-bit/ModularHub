@@ -7,6 +7,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { URL } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,8 +26,9 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-    let filePath = path.join(__dirname, req.url);
-    if (req.url === '/') {
+    const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
+    let filePath = path.join(__dirname, pathname);
+    if (pathname === '/') {
         filePath = path.join(__dirname, 'index.html');
     }
 

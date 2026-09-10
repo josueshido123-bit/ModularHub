@@ -27,7 +27,7 @@
     background-color: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
-    max-width: 90vw;
+    max-width: min(1100px, 94vw);
     max-height: 90vh;
     width: 100%;
     overflow: auto;
@@ -94,6 +94,38 @@
     flex: 1;
 }
 
+/* Keep scrolling available without exposing a scrollbar during animated swaps. */
+.module-modal-content,
+.module-modal-body,
+.finance-view-transition,
+.bookmarks-module-content,
+.wishlist-catalogue,
+.wishlist-history,
+.bookmarks-catalogue,
+.bookmarks-history,
+.wishlist-form-panel,
+.wishlist-detail-panel,
+.bookmarks-form-panel,
+.bookmarks-detail-panel {
+    scrollbar-width: none;
+    scrollbar-gutter: auto;
+}
+
+.module-modal-content::-webkit-scrollbar,
+.module-modal-body::-webkit-scrollbar,
+.finance-view-transition::-webkit-scrollbar,
+.bookmarks-module-content::-webkit-scrollbar,
+.wishlist-catalogue::-webkit-scrollbar,
+.wishlist-history::-webkit-scrollbar,
+.bookmarks-catalogue::-webkit-scrollbar,
+.bookmarks-history::-webkit-scrollbar,
+.wishlist-form-panel::-webkit-scrollbar,
+.wishlist-detail-panel::-webkit-scrollbar,
+.bookmarks-form-panel::-webkit-scrollbar,
+.bookmarks-detail-panel::-webkit-scrollbar {
+    display: none;
+}
+
 /* Responsive modal */
 @media (max-width: 768px) {
     .module-modal-content {
@@ -133,6 +165,157 @@
     width: 100%;
 }
 
+/* Wishlist Module */
+.hidden { display: none !important; }
+.wishlist-module-content,
+.bookmarks-module-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    height: clamp(28rem, 58vh, 38rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+.wishlist-toolbar, .wishlist-tabs, .wishlist-summary, .wishlist-card-title, .wishlist-card-actions { display: flex; align-items: center; gap: var(--space-md); }
+.wishlist-toolbar, .wishlist-summary, .wishlist-card-title { justify-content: space-between; }
+.wishlist-tabs { justify-content: flex-start; }
+.wishlist-tab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--color-text-tertiary); cursor: pointer; padding: var(--space-sm); transition: color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast); }
+.wishlist-tab:hover { color: var(--color-text); transform: translateY(-1px); }
+.wishlist-tab.active { color: var(--color-primary-light); border-bottom-color: var(--color-primary); }
+.wishlist-summary { color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
+.wishlist-catalogue { display: grid; grid-template-columns: repeat(auto-fill, 220px); grid-auto-rows: 360px; gap: var(--space-lg); align-items: start; overflow-y: auto; padding: 2px; }
+.wishlist-card { width: 220px; height: 360px; display: flex; flex-direction: column; overflow: hidden; background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); transition: transform var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base); }
+.wishlist-card:hover { transform: translateY(-4px); border-color: var(--color-primary); box-shadow: var(--shadow-lg); }
+.wishlist-card.completed { opacity: .68; }
+.wishlist-card-open { height: 184px; flex: 0 0 184px; padding: 0; border: 0; background: var(--color-bg-tertiary); cursor: pointer; overflow: hidden; }
+.wishlist-card-open img, .wishlist-card-open video, .wishlist-detail-media img, .wishlist-detail-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wishlist-media-placeholder { display: grid; place-items: center; width: 100%; height: 100%; color: var(--color-primary-light); font-size: 2.5rem; background: linear-gradient(135deg, var(--color-bg-tertiary), var(--color-bg)); }
+.wishlist-media-placeholder.large { min-height: 280px; }
+.wishlist-media-placeholder.history { width: 56px; height: 44px; font-size: var(--font-size-xs); }
+.wishlist-history-row img, .wishlist-history-row video { width: 56px; height: 44px; object-fit: cover; display: block; border-radius: var(--radius-sm); }
+.wishlist-hover-media { cursor: pointer; transition: color var(--transition-fast), background-color var(--transition-fast); }
+.wishlist-hover-media.is-playing { color: transparent; }
+.wishlist-card-body { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: var(--space-sm); padding: var(--space-md); }
+.wishlist-card-title { align-items: flex-start; }
+.wishlist-card-title h3 { min-width: 0; margin: 0; overflow: hidden; font-size: var(--font-size-base); text-overflow: ellipsis; white-space: nowrap; }
+.wishlist-complete-badge, .wishlist-history-action { color: var(--color-success); font-size: var(--font-size-xs); text-transform: uppercase; }
+.wishlist-price, .wishlist-detail-price { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
+.wishlist-progress { height: 6px; overflow: hidden; background: var(--color-bg-tertiary); border-radius: 999px; }
+.wishlist-progress-fill { height: 100%; background: var(--color-success); border-radius: inherit; transition: width var(--transition-base); }
+.wishlist-card-body small { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.wishlist-countdown, .wishlist-detail-countdown { color: var(--color-primary-light); font-size: var(--font-size-xs); }
+.wishlist-card-actions { margin-top: auto; }
+.wishlist-card-actions .btn { flex: 1; min-width: 0; padding-inline: var(--space-sm); }
+.wishlist-empty { grid-column: 1 / -1; padding: var(--space-2xl); color: var(--color-text-tertiary); text-align: center; }
+.wishlist-form-modal, .wishlist-detail-modal { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: var(--space-lg); background: rgba(0, 0, 0, .72); backdrop-filter: blur(4px); animation: fadeIn 180ms ease-out; }
+.wishlist-form-panel, .wishlist-detail-panel { position: relative; width: min(680px, 94vw); max-height: 90vh; overflow-y: auto; padding: var(--space-xl); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); animation: modalSlideIn 220ms ease; }
+.wishlist-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+.wishlist-file-label { position: relative; width: fit-content; }
+.wishlist-file-label input { display: none; }
+.wishlist-media-editor { position: relative; display: grid; place-items: center; width: 100%; height: 220px; margin: var(--space-md) 0 var(--space-sm); overflow: hidden; cursor: grab; background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: var(--radius-md); user-select: none; touch-action: none; }
+.wishlist-media-editor:active { cursor: grabbing; }
+.wishlist-media-editor img, .wishlist-media-editor video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.wishlist-upload-empty { padding: var(--space-lg); color: var(--color-text-tertiary); text-align: center; font-size: var(--font-size-sm); }
+.wishlist-detail-panel { display: grid; grid-template-columns: minmax(220px, .9fr) 1.1fr; gap: var(--space-xl); }
+.wishlist-detail-close, .wishlist-form-close { position: absolute; top: var(--space-md); right: var(--space-md); z-index: 1; border: 0; background: transparent; color: var(--color-text-tertiary); font-size: var(--font-size-2xl); cursor: pointer; }
+.wishlist-detail-media { min-height: 280px; overflow: hidden; border-radius: var(--radius-md); background: var(--color-bg-tertiary); }
+.wishlist-detail-info { display: flex; flex-direction: column; gap: var(--space-md); }
+.wishlist-detail-info h2 { margin: 0; }
+.wishlist-detail-info p { white-space: pre-wrap; }
+.wishlist-detail-actions { display: flex; gap: var(--space-md); margin-top: auto; }
+.wishlist-history { display: flex; flex-direction: column; gap: var(--space-md); overflow-y: auto; }
+.wishlist-history h3 { margin-bottom: var(--space-sm); }
+.wishlist-history-row { display: grid; grid-template-columns: 56px 90px 1fr auto; gap: var(--space-md); align-items: center; padding: var(--space-md); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.wishlist-history-row time { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+
+/* Bookmarks Module */
+.bookmarks-toolbar, .bookmarks-tabs, .bookmarks-summary, .bookmarks-card-actions { display: flex; align-items: center; gap: var(--space-md); }
+.bookmarks-toolbar, .bookmarks-summary { justify-content: space-between; }
+.bookmarks-command-bar, .bookmarks-history-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-lg); padding-bottom: var(--space-lg); border-bottom: 1px solid var(--color-border); }
+.bookmarks-command-bar h3, .bookmarks-history-heading h3 { margin: var(--space-xs) 0; }
+.bookmarks-command-bar p { margin: 0; color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
+.bookmarks-command-actions { display: flex; align-items: center; gap: var(--space-sm); }
+.bookmarks-section-label { display: block; margin-bottom: var(--space-sm); color: var(--color-text-tertiary); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: .08em; text-transform: uppercase; }
+.bookmarks-tabs { justify-content: flex-start; }
+.bookmarks-tab { padding: var(--space-sm); border: 0; border-bottom: 2px solid transparent; background: none; color: var(--color-text-tertiary); cursor: pointer; transition: color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast); }
+.bookmarks-tab:hover { color: var(--color-text); transform: translateY(-1px); }
+.bookmarks-tab.active { color: var(--color-primary-light); border-bottom-color: var(--color-primary); }
+.bookmarks-summary { color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
+.bookmarks-catalogue { display: grid; grid-template-columns: repeat(auto-fill, 220px); grid-auto-rows: 360px; gap: var(--space-lg); align-items: start; overflow-y: auto; padding: 2px; }
+.bookmarks-card { display: flex; flex-direction: column; width: 220px; height: 360px; overflow: hidden; background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); transition: transform var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base); animation: wishlistItemEnter 300ms ease-out both; }
+.bookmarks-card:hover { transform: translateY(-4px); border-color: var(--color-primary); box-shadow: var(--shadow-lg); }
+.bookmarks-featured-wrap, .bookmarks-quick-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+.bookmarks-featured { display: grid; grid-template-columns: minmax(240px, .9fr) 1.1fr; width: 100%; min-height: 270px; overflow: hidden; background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.bookmarks-featured-open { align-self: stretch; height: 100%; min-height: 270px; flex: none; }
+.bookmarks-featured-info { display: flex; flex-direction: column; justify-content: center; gap: var(--space-md); padding: var(--space-xl); }
+.bookmarks-featured-info h2 { margin: 0; }
+.bookmarks-featured-info p { margin: 0; color: var(--color-text-secondary); }
+.bookmarks-featured-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-md); }
+.bookmarks-quick-list { margin-top: var(--space-md); }
+.bookmarks-quick-item { display: grid; grid-template-columns: 72px 1fr auto; gap: var(--space-md); align-items: center; min-height: 76px; padding: var(--space-sm) var(--space-md); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); animation: wishlistItemEnter 300ms ease-out both; }
+.bookmarks-quick-item:hover { border-color: var(--color-primary); transform: translateX(3px); }
+.bookmarks-quick-media { width: 72px; height: 56px; overflow: hidden; padding: 0; border: 0; background: var(--color-bg-tertiary); cursor: pointer; }
+.bookmarks-quick-media img, .bookmarks-quick-media video { width: 100%; height: 100%; object-fit: cover; }
+.bookmarks-quick-info { min-width: 0; }
+.bookmarks-quick-info h4 { margin: 0 0 var(--space-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bookmarks-quick-info p { overflow: hidden; margin: 0; color: var(--color-text-tertiary); font-size: var(--font-size-sm); text-overflow: ellipsis; white-space: nowrap; }
+.bookmarks-quick-actions { display: flex; gap: var(--space-xs); }
+.bookmarks-card-open { flex: 0 0 184px; height: 184px; padding: 0; overflow: hidden; border: 0; background: var(--color-bg-tertiary); cursor: pointer; }
+.bookmarks-featured-open { align-self: stretch; height: 100%; min-height: 270px; flex: none; }
+.bookmarks-card-open img, .bookmarks-card-open video, .bookmarks-detail-media img, .bookmarks-detail-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.bookmarks-media-placeholder { display: grid; place-items: center; width: 100%; height: 100%; color: var(--color-primary-light); font-size: 2rem; background: linear-gradient(135deg, var(--color-bg-tertiary), var(--color-bg)); }
+.bookmarks-media-placeholder.history { width: 56px; height: 44px; font-size: var(--font-size-xs); }
+.bookmarks-history-row img, .bookmarks-history-row video { display: block; width: 56px; height: 44px; object-fit: cover; border-radius: var(--radius-sm); }
+.bookmarks-hover-media { cursor: pointer; transition: color var(--transition-fast), background-color var(--transition-fast); }
+.bookmarks-hover-media.is-playing { color: transparent; }
+.bookmarks-card-body { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: var(--space-sm); padding: var(--space-md); }
+.bookmarks-card-body h3 { margin: 0; overflow: hidden; font-size: var(--font-size-base); text-overflow: ellipsis; white-space: nowrap; }
+.bookmarks-card-body p { display: -webkit-box; overflow: hidden; margin: 0; color: var(--color-text-tertiary); font-size: var(--font-size-sm); -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.bookmarks-card-actions { margin-top: auto; }
+.bookmarks-card-actions .btn { flex: 1; min-width: 0; padding-inline: var(--space-sm); }
+.bookmarks-empty { grid-column: 1 / -1; padding: var(--space-2xl); color: var(--color-text-tertiary); text-align: center; }
+.bookmarks-form-modal, .bookmarks-detail-modal { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: var(--space-lg); background: rgba(0, 0, 0, .72); backdrop-filter: blur(4px); animation: fadeIn 180ms ease-out; }
+.bookmarks-form-panel, .bookmarks-detail-panel { position: relative; width: min(680px, 94vw); max-height: 90vh; overflow-y: auto; padding: var(--space-xl); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); animation: modalSlideIn 220ms ease; }
+.bookmarks-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+.bookmarks-file-label { position: relative; width: fit-content; }
+.bookmarks-file-label input { display: none; }
+.bookmarks-media-editor { position: relative; display: grid; place-items: center; width: 100%; height: 220px; margin: var(--space-md) 0 var(--space-sm); overflow: hidden; cursor: grab; background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: var(--radius-md); touch-action: none; user-select: none; }
+.bookmarks-media-editor:active { cursor: grabbing; }
+.bookmarks-media-editor img, .bookmarks-media-editor video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.bookmarks-upload-empty { padding: var(--space-lg); color: var(--color-text-tertiary); text-align: center; font-size: var(--font-size-sm); }
+.bookmarks-detail-panel { display: grid; grid-template-columns: minmax(220px, .9fr) 1.1fr; gap: var(--space-xl); }
+.bookmarks-detail-close, .bookmarks-form-close { position: absolute; top: var(--space-md); right: var(--space-md); z-index: 1; border: 0; background: transparent; color: var(--color-text-tertiary); font-size: var(--font-size-2xl); cursor: pointer; }
+.bookmarks-detail-media { min-height: 280px; overflow: hidden; border-radius: var(--radius-md); background: var(--color-bg-tertiary); }
+.bookmarks-detail-info { display: flex; flex-direction: column; gap: var(--space-md); }
+.bookmarks-detail-info h2 { margin: 0; }
+.bookmarks-detail-info p { white-space: pre-wrap; }
+.bookmarks-detail-actions { display: flex; gap: var(--space-md); margin-top: auto; }
+.bookmarks-history { display: flex; flex-direction: column; gap: var(--space-md); overflow-y: auto; }
+.bookmarks-timeline { position: relative; display: flex; flex-direction: column; gap: var(--space-sm); padding-left: var(--space-lg); }
+.bookmarks-timeline::before { position: absolute; top: 0; bottom: 0; left: 7px; width: 1px; background: var(--color-border); content: ''; }
+.bookmarks-timeline-entry { position: relative; display: grid; grid-template-columns: 56px 1fr auto; gap: var(--space-md); align-items: center; padding: var(--space-sm) var(--space-md); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); animation: wishlistItemEnter 300ms ease-out both; }
+.bookmarks-timeline-marker { position: absolute; left: -21px; width: 9px; height: 9px; background: var(--color-primary); border: 2px solid var(--color-bg); border-radius: 50%; }
+.bookmarks-timeline-media img, .bookmarks-timeline-media video { display: block; width: 56px; height: 44px; object-fit: cover; border-radius: var(--radius-sm); }
+.bookmarks-timeline-copy { display: flex; flex-direction: column; gap: var(--space-xs); }
+.bookmarks-timeline-copy span, .bookmarks-timeline-entry time { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.finance-toolbar, .finance-tabs, .section-heading, .goal-header, .goal-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
+.finance-tabs { justify-content: flex-start; flex-wrap: wrap; }
+.finance-tab { background: none; border: 0; color: var(--color-text-tertiary); padding: var(--space-sm); cursor: pointer; }
+.finance-tab.active { color: var(--color-primary-light); border-bottom: 2px solid var(--color-primary); }
+.finance-view-transition {
+    height: clamp(28rem, 58vh, 38rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation: financeViewEnter 220ms ease both;
+}
+@keyframes financeViewEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.progress-track { width: 100%; height: .6rem; background: var(--color-bg-tertiary); border-radius: 999px; overflow: hidden; }
+.progress-track { margin: var(--space-md) 0 var(--space-sm); }
+.progress-fill { height: 100%; background: var(--color-success); border-radius: inherit; }
+.goal-item { padding: var(--space-md); margin: var(--space-md) 0; background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.goal-footer { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.goal-form { padding: var(--space-lg); background: var(--color-bg-secondary); margin: var(--space-md) 0; }
+
 /* Initial Setup */
 .finance-init {
     display: flex;
@@ -160,8 +343,8 @@
 /* Balance Display */
 .finance-balance {
     padding: var(--space-lg);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 10%, transparent) 0%, color-mix(in srgb, var(--color-secondary) 10%, transparent) 100%);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
     border-radius: var(--radius-lg);
     text-align: center;
 }
@@ -177,7 +360,7 @@
 .balance-amount {
     font-size: var(--font-size-3xl);
     font-weight: var(--font-weight-bold);
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -460,6 +643,31 @@
     .transaction-actions {
         grid-column: span 1;
     }
+    .finance-toolbar { align-items: flex-start; flex-direction: column; }
+    .finance-view-transition { height: 34rem; }
+    .wishlist-module-content, .bookmarks-module-content { height: 34rem; }
+    .wishlist-toolbar { align-items: flex-start; flex-direction: column; }
+    .wishlist-catalogue { grid-template-columns: repeat(auto-fill, 200px); grid-auto-rows: 340px; justify-content: center; }
+    .wishlist-card { width: 200px; height: 340px; }
+    .wishlist-detail-panel { grid-template-columns: 1fr; gap: var(--space-lg); }
+    .wishlist-detail-media { min-height: 210px; max-height: 300px; }
+    .wishlist-form-grid { grid-template-columns: 1fr; gap: 0; }
+    .wishlist-history-row { grid-template-columns: 1fr; gap: var(--space-xs); }
+    .bookmarks-toolbar { align-items: flex-start; flex-direction: column; }
+    .bookmarks-command-bar, .bookmarks-history-heading { align-items: flex-start; flex-direction: column; }
+    .bookmarks-command-actions { flex-wrap: wrap; }
+    .bookmarks-featured { grid-template-columns: 1fr; }
+    .bookmarks-featured-open { height: 200px; min-height: 200px; }
+    .bookmarks-catalogue { grid-template-columns: repeat(auto-fill, 200px); grid-auto-rows: 340px; justify-content: center; }
+    .bookmarks-card { width: 200px; height: 340px; }
+    .bookmarks-card-open { flex-basis: 170px; height: 170px; }
+    .bookmarks-featured-open { height: 200px; min-height: 200px; }
+    .bookmarks-detail-panel { grid-template-columns: 1fr; gap: var(--space-lg); }
+    .bookmarks-detail-media { min-height: 210px; max-height: 300px; }
+    .bookmarks-form-grid { grid-template-columns: 1fr; gap: 0; }
+    .bookmarks-history-row { grid-template-columns: 1fr; gap: var(--space-xs); }
+    .bookmarks-timeline-entry { grid-template-columns: 56px 1fr; }
+    .bookmarks-timeline-entry time { grid-column: 2; }
 }
 
 @media (max-width: 480px) {

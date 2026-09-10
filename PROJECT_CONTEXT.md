@@ -2,9 +2,9 @@
 
 > A polished, modern, highly extensible dashboard web application with a modular architecture.
 
-**Last Updated:** 2026-08-29  
-**Version:** 1.0.0  
-**Status:** MVP with Toolbelt Interface & Working Settings
+**Last Updated:** 2026-09-10  
+**Version:** 1.4.3  
+**Status:** MVP with account-scoped Finance, Wishlist, and Bookmarks modules
 
 ---
 
@@ -159,6 +159,12 @@ class ModuleComponent {
 4. **Functionality** - User interacts with module inside modal
 5. **Close** - Modal closes, returns to toolbelt view
 
+### Module Visual Distinction
+
+**Important design rule:** Modules must not use the exact same UI structure as one another. They should share the application design system, including theme tokens, typography, spacing, borders, buttons, animation timing, responsive behavior, and accessibility conventions, but each module must have a recognizable composition suited to its purpose. Modules do not need to be dramatically different; they do need distinguishable layouts, information hierarchies, controls, and interaction patterns so Finance, Wishlist, Bookmarks, and future modules feel like separate tools within the same product.
+
+**Important layout rule:** A module body must never change size when switching sections, tabs, categories, filters, or states. Each module must reserve a stable responsive body viewport and handle longer content with internal scrolling, so the surrounding modal and page do not jump or resize.
+
 ---
 
 ## 💰 Finance Module
@@ -216,16 +222,18 @@ src/modules/finance/
 
 ✅ **Initial Balance Setup** - User can set starting balance  
 ✅ **Add Transactions** - Income/expense with category, amount, note, date  
-✅ **Transaction History** - Sorted by date, with edit/delete  
+✅ **Transaction History** - Sorted by date, with description editing and delete  
 ✅ **Categories** - Default categories for income/expense  
 ✅ **Quick Statistics** - Total income, expenses, net change  
 ✅ **Balance Display** - Prominent, auto-updating  
 ✅ **Responsive UI** - Mobile-friendly transaction list  
 ✅ **Animations** - Smooth transitions and micro-interactions  
+✅ **Financial Goals** - Targets with balance-based progress bars  
+✅ **Account Storage** - Email/password accounts with guest data migration  
+✅ **Responsive Module Workspace** - Larger desktop and mobile-friendly module modal  
 
 ### Features Not Yet Implemented
 
-⚠️ **Financial Goals** - Infrastructure exists, UI pending  
 ⚠️ **Advanced Statistics** - Category breakdown charts  
 ⚠️ **Budget Limits** - Per-category spending limits  
 ⚠️ **Recurring Transactions** - Automatic repeat transactions  
@@ -270,6 +278,176 @@ financeService.getStatistics() → {totalIncome, totalExpenses, netChange, ...}
 // Categories
 financeService.getCategories() → [Category]
 financeService.getCategory(categoryId) → Category
+```
+
+### Customization
+
+Every module is highly customizable through code. Module metadata, components, services, storage keys, styles, and responsive behavior can be extended or changed without coupling modules to the dashboard shell.
+
+---
+
+## ✦ Wishlist Module
+
+### Purpose
+
+The Wishlist module is a catalogue for things a user wants to remember, plan for, or eventually purchase. It supports fixed-size catalogue cards, richer item detail views, media, links, notes, prices, target dates, completion, and a complete change history.
+
+### Structure
+```
+src/modules/wishlist/
+├── wishlistService.js       # Account-scoped items and history
+├── WishlistComponent.js     # Catalogue, forms, detail view, and countdowns
+└── wishlistModule.js        # Module registration
+```
+
+### Item Data Model
+```javascript
+{
+    id: string,
+    name: string,
+    mediaUrl: string,
+    mediaType: 'image' | 'gif' | 'video',
+    mediaPosition: string,        // CSS object-position, e.g. '50% 50%'
+    price: number | null,
+    notes: string,
+    link: string,
+    targetDate: ISO8601 | null,
+    status: 'active' | 'completed',
+    createdAt: ISO8601,
+    updatedAt: ISO8601
+}
+```
+
+### History Data Model
+```javascript
+{
+    id: string,
+    itemId: string,
+    action: 'added' | 'edited' | 'completed' | 'reopened' | 'removed',
+    details: object,
+    date: ISO8601
+}
+```
+
+### Features Implemented
+
+✅ **Fixed Catalogue Cards** - Cards remain the same size as item count changes  
+✅ **Media** - Image, GIF, and video URLs with larger media in detail view  
+✅ **Media Upload and Positioning** - Local image/GIF/video uploads are stored as data URLs and can be dragged to choose their crop position  
+✅ **Hover Media Playback** - GIFs and videos load/play on hover or keyboard focus and stop when leaving  
+✅ **Item Details** - Name, price, notes, links, status, and target date  
+✅ **Finance Progress** - Price-bearing items show progress from the current Finance balance  
+✅ **Countdowns** - Target dates display remaining days or elapsed days  
+✅ **Completion** - Items can be completed and reopened  
+✅ **History** - Added, edited, completed, reopened, and removed actions are recorded with compact media thumbnails  
+✅ **Responsive Layout** - Fixed-size catalogue adapts to mobile without stretching cards  
+✅ **Account Storage** - Wishlist data uses the active account namespace
+✅ **Animated Sections** - Catalogue cards and history rows enter with staggered motion; detail and form overlays use modal transitions  
+✅ **Animated Closing** - Module, Settings, Finance, Wishlist form, and Wishlist detail overlays use coordinated fade/scale exit animations  
+
+### WishlistService API
+```javascript
+wishlistService.addItem(item) → Item
+wishlistService.updateItem(itemId, updates) → Item
+wishlistService.completeItem(itemId) → Item
+wishlistService.removeItem(itemId)
+wishlistService.getItem(itemId) → Item | null
+wishlistService.getItems() → [Item]
+wishlistService.getHistory() → [HistoryEntry]
+```
+
+### Storage Schema
+```javascript
+{
+    wishlist_data: {
+        items: [Item],
+        history: [HistoryEntry]
+    }
+}
+```
+
+---
+
+## 🎨 Theme System
+
+Themes are applied through shared CSS variables on `document.documentElement`, so the dashboard, module cards, modals, forms, buttons, Finance, Wishlist, and Settings all change together. The selected theme is persisted through account-scoped `theme_settings` data.
+
+Wishlist uses the shared animation language from `src/styles/animations.css`: fixed-size cards and history rows use a short staggered entrance, tabs use a restrained hover transition, item forms/detail views use fade and modal slide transitions, and all overlays use the coordinated `fadeOut`/`modalSlideOut` close pair. Reduced-motion preferences disable these effects through the global animation rule.
+
+All module scroll regions keep wheel and touch scrolling available without visible scrollbar chrome. This prevents a native scrollbar from flashing during Wishlist section changes or shifting the catalogue layout when content becomes scrollable.
+
+Available themes:
+- **Midnight** - Existing deep blue-black dashboard palette
+- **Graphite** - Formal charcoal and steel palette
+- **Paper** - Light editorial palette
+- **Forest** - Dark green with warm copper accents
+
+Theme behavior is centralized in `src/services/themeService.js`; new themes should add a token set there and a matching `data-theme` selector in `src/styles/base.css`.
+
+---
+
+## 🔖 Bookmarks Module
+
+### Purpose
+
+Bookmarks is a visual link library for saving useful pages with a name, URL, description, and optional image, GIF, or video media. It follows the Wishlist interaction language while keeping its own account-scoped data and history.
+
+### Structure
+```
+src/modules/bookmarks/
+├── bookmarksService.js       # Account-scoped bookmarks and history
+├── BookmarksComponent.js     # Catalogue, forms, detail view, and media editor
+└── bookmarksModule.js        # Module registration
+```
+
+### Bookmark Data Model
+```javascript
+{
+    id: string,
+    name: string,
+    url: string,
+    mediaUrl: string,
+    mediaType: 'image' | 'gif' | 'video',
+    mediaPosition: string,      // CSS object-position, e.g. '50% 50%'
+    description: string,
+    createdAt: ISO8601,
+    updatedAt: ISO8601
+}
+```
+
+### Features Implemented
+
+✅ **Visual Catalogue** - Fixed-size cards with media-first presentation  
+✅ **Distinct Reference Shelf UI** - Featured bookmark presentation, compact quick-access rows, and a timeline history instead of the Wishlist catalogue structure  
+✅ **Bookmark Links** - Required URL with an open-in-new-tab detail action  
+✅ **Descriptions** - Optional explanatory text shown on cards and detail views  
+✅ **Media URLs and Uploads** - Images, GIFs, and videos from URLs or local files  
+✅ **Media Positioning** - Drag uploaded media to choose its crop position  
+✅ **Hover Playback** - GIFs and videos load/play only on hover or keyboard focus  
+✅ **Add, Edit, and Delete** - Full bookmark lifecycle with confirmation before deletion  
+✅ **Detail View** - Larger media and complete bookmark information  
+✅ **History** - Added, edited, and removed actions with compact thumbnails  
+✅ **Account Storage** - Uses the active account namespace without changing Finance or Wishlist data  
+✅ **Themes and Animations** - Uses shared themes, card entrances, overlay transitions, and responsive rules
+
+### BookmarksService API
+```javascript
+bookmarksService.addItem(bookmark) → Bookmark
+bookmarksService.updateItem(itemId, updates) → Bookmark
+bookmarksService.removeItem(itemId)
+bookmarksService.getItem(itemId) → Bookmark | null
+bookmarksService.getItems() → [Bookmark]
+bookmarksService.getHistory() → [HistoryEntry]
+```
+
+### Storage Schema
+```javascript
+{
+    bookmarks_data: {
+        items: [Bookmark],
+        history: [HistoryEntry]
+    }
+}
 ```
 
 ---
@@ -360,6 +538,7 @@ simpledash/
 │   ├── services/
 │   │   ├── storageService.js          # Data persistence (localStorage)
 │   │   └── settingsService.js         # App-wide settings management
+│   │   └── themeService.js            # Persisted application-wide themes
 │   │
 │   ├── utilities/
 │   │   └── uiUtils.js                 # UI helper functions
@@ -369,6 +548,16 @@ simpledash/
 │   │   │   ├── financeModule.js       # Registration
 │   │   │   ├── financeService.js      # Business logic
 │   │   │   └── FinanceComponent.js    # UI component
+│   │   │
+│   │   ├── wishlist/
+│   │   │   ├── wishlistModule.js      # Registration
+│   │   │   ├── wishlistService.js     # Items and history
+│   │   │   └── WishlistComponent.js   # Catalogue and detail UI
+│   │   │
+│   │   ├── bookmarks/
+│   │   │   ├── bookmarksModule.js     # Registration
+│   │   │   ├── bookmarksService.js     # Bookmarks and history
+│   │   │   └── BookmarksComponent.js   # Catalogue and detail UI
 │   │   │
 │   │   └── settings/
 │   │       ├── SettingsComponent.js   # Settings UI
@@ -388,15 +577,21 @@ simpledash/
 
 ### StorageService
 
-- **Backend:** localStorage with `simpledash_` prefix
+- **Backend:** localStorage with `simpledash_` prefix and account-scoped keys
 - **Interface:** Save/Load/Remove/Subscribe
 - **Observer Pattern:** Listeners notified on changes
 - **Export/Import:** Full data backup/restore
+
+### Accounts and Migration
+
+The default `guest` account preserves existing data. Creating an email/password account copies legacy guest module data into the new account without deleting the guest copy, then switches the active storage namespace. Credentials are local-browser credentials in this MVP; production authentication should use a backend and password hashing.
 
 ### Module-Specific Data
 
 Each module manages its own data through a dedicated service:
 - FinanceService → `simpledash_finance_data`
+- WishlistService → `simpledash_wishlist_data`
+- BookmarksService → `simpledash_bookmarks_data`
 - (Future) NotesService → `simpledash_notes_data`
 - (Future) TasksService → `simpledash_tasks_data`
 
@@ -474,7 +669,7 @@ Application-wide settings panel accessible via the gear icon (⚙️) in the hea
 ```javascript
 {
     app_settings: {
-        theme: 'dark',                        // Future: theme support
+        theme: 'midnight',                    // Active theme is stored in theme_settings
         animationsEnabled: true,              // Animation toggle
         respectReducedMotion: boolean,        // OS preference
         soundEnabled: false,                  // Sound effects
@@ -516,6 +711,28 @@ No testing framework currently implemented. Recommended:
 - Integration: Testing Library (component rendering)
 - E2E: Cypress (user workflows)
 
+### Latest Live Validation
+
+✅ Finance and Wishlist modules load together without changing existing account-scoped data  
+✅ Wishlist add, edit, completion, reopening, history, countdown, and Finance progress flows work  
+✅ Wishlist image/GIF/video media renders in catalogue, detail, and compact history views  
+✅ GIFs and videos load/play only on hover or keyboard focus and stop when leaving  
+✅ Local media upload converts files to persistent data URLs  
+✅ Dragging the upload preview updates and persists `mediaPosition` crop coordinates  
+✅ Catalogue cards remain fixed-size on desktop and mobile  
+✅ Theme selection applies shared tokens across modules and persists per account  
+✅ Module, Settings, Finance, and Wishlist overlays show coordinated close animations  
+✅ Wishlist section changes keep the body stable and do not flash visible scrollbars  
+✅ Wishlist and Bookmarks reserve stable responsive body viewports across their library/history sections  
+✅ Bookmarks module registers beside Finance and Wishlist without changing their data  
+✅ Bookmarks add flow saves links, descriptions, uploaded media, and dragged crop positions  
+✅ Bookmarks detail, edit, delete, history, media, animations, and mobile layout work live  
+✅ Bookmarks uses a distinct featured-shelf, quick-access, and timeline composition rather than Wishlist's catalogue structure  
+✅ Bookmarks Library and History keep stable body dimensions without visible native scrollbar flashes  
+✅ Fresh acceptance pass migrated representative Finance, Wishlist, and Bookmarks data into a new account without loss  
+✅ Fresh acceptance pass opened all modules, verified stable section heights, mobile viewport bounds, theme switching, and Settings close animation  
+✅ JavaScript syntax checks and editor diagnostics pass across changed files
+
 ---
 
 ## 📝 Important Implementation Decisions
@@ -536,12 +753,19 @@ No testing framework currently implemented. Recommended:
 - Components handle UI only
 - Clear separation of concerns
 
-### 4. CSS Grid for Layout
+### 4. Distinct Module Experiences
+- Reuse shared visual tokens and interaction conventions
+- Choose module-specific layouts and primary workflows
+- Avoid copying another module's exact toolbar, card, list, or detail structure
+- Make each module recognizable at a glance while preserving the overall product aesthetic
+- Keep the module body dimension stable across every view; scroll content inside the reserved body area
+
+### 5. CSS Grid for Layout
 - Native responsive without Bootstrap/Tailwind
 - Flexible grid system for different module sizes
 - Better performance than frameworks
 
-### 5. Observer Pattern for Storage
+### 6. Observer Pattern for Storage
 - Modules can subscribe to data changes
 - Reactive updates without re-rendering entire app
 - Scalable state management
@@ -550,7 +774,7 @@ No testing framework currently implemented. Recommended:
 
 ## 🚀 Future Module Ideas
 
-These are NOT implemented yet, but the architecture supports them:
+These are NOT implemented yet, but the architecture supports them. Each can be built independently with a service, component, registration file, account-scoped storage key, responsive styles, and documented module API:
 
 1. **Notes** - Quick note-taking with tags
 2. **Tasks** - To-do list with priorities and due dates
@@ -562,6 +786,33 @@ These are NOT implemented yet, but the architecture supports them:
 8. **Bookmarks** - Quick access to saved links
 9. **Shopping List** - Shareable lists with checkboxes
 10. **Music** - Now playing and playlist management
+
+### Additional Module Ideas
+
+11. **Dashboard Widgets** - Customizable information blocks for balances, goals, upcoming dates, and quick actions. Could provide a reusable widget configuration service for the dashboard.
+12. **Meal Planner** - Weekly meals, recipes, ingredients, and grocery-list generation. Could connect to the Shopping List module.
+13. **Recipe Box** - Save recipes with images, ingredients, tags, ratings, and preparation steps.
+14. **Travel Planner** - Trips with destinations, dates, reservations, packing lists, links, and expense summaries from Finance.
+15. **Reading Tracker** - Books with covers, authors, notes, ratings, progress, and reading goals.
+16. **Game Backlog** - Track games by platform, status, playtime, rating, media, and links. Could import items from Wishlist.
+17. **Movie and Series Tracker** - Watchlist, watch history, ratings, release dates, and optional media artwork.
+18. **Inventory** - Track owned items, purchase dates, values, warranties, serial numbers, and storage locations.
+19. **Subscriptions** - Recurring services with billing dates, prices, renewal countdowns, and Finance expense links.
+20. **Debt Payoff Planner** - Debts, interest rates, minimum payments, payoff projections, and progress visualization.
+21. **Fitness Log** - Workouts, exercises, personal records, measurements, and recurring routines.
+22. **Mood Journal** - Daily mood, notes, tags, and private trend summaries stored only in the active account.
+23. **Focus Dashboard** - A daily command view combining tasks, calendar events, Pomodoro sessions, and one selected goal.
+24. **File Cabinet** - Organize links and small uploaded documents with tags, descriptions, and expiration reminders.
+25. **Contact and Relationship Notes** - Important dates, contact details, interaction notes, and follow-up reminders.
+26. **Home Maintenance** - Appliances, maintenance schedules, warranties, service history, and cost tracking through Finance.
+27. **Price Watch** - Products with current price, target price, source link, and manual price history. Could connect directly to Wishlist.
+28. **Digital Garden** - Interlinked notes, ideas, references, and tags for long-term knowledge building.
+29. **Export Center** - Module-specific CSV/JSON exports, filtered backups, and import validation without changing existing account data.
+30. **Automation Rules** - User-defined local rules such as "when a goal reaches 100%, mark it complete" or "remind me before a subscription renews."
+
+### Strong Next Candidates
+
+For the current product, the strongest next modules are **Subscriptions**, **Game Backlog**, **Price Watch**, **Calendar**, and **Tasks**. Together they extend existing Finance and Wishlist data without requiring a new backend, and they can demonstrate cross-module links while preserving the modular architecture.
 
 ---
 

@@ -5,7 +5,10 @@
 
 import { moduleSystem } from './core/moduleSystem.js';
 import { registerFinanceModule } from './modules/finance/financeModule.js';
+import { registerWishlistModule } from './modules/wishlist/wishlistModule.js';
+import { registerBookmarksModule } from './modules/bookmarks/bookmarksModule.js';
 import { SettingsComponent } from './modules/settings/SettingsComponent.js';
+import './services/themeService.js';
 
 /**
  * Initialize the application
@@ -26,6 +29,8 @@ async function initializeApp() {
         // Register all modules
         console.log('📦 Registering modules...');
         registerFinanceModule();
+        registerWishlistModule();
+        registerBookmarksModule();
 
         // Load all registered modules
         console.log('⚙️  Loading modules...');
@@ -109,16 +114,18 @@ function openSettingsModal() {
     modal.appendChild(content);
 
     // Close button handler
-    header.querySelector('.module-modal-close').addEventListener('click', () => {
-        modal.classList.remove('show');
+    const closeSettings = () => {
+        if (modal.classList.contains('closing')) return;
+        modal.classList.add('closing');
         setTimeout(() => modal.remove(), 300);
-    });
+    };
+
+    header.querySelector('.module-modal-close').addEventListener('click', closeSettings);
 
     // Close on backdrop click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-            modal.classList.remove('show');
-            setTimeout(() => modal.remove(), 300);
+            closeSettings();
         }
     });
 

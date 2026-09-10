@@ -77,6 +77,51 @@
     --transition-slow: 300ms ease;
 }
 
+:root[data-theme="graphite"] {
+    --color-primary: #5b8def;
+    --color-primary-dark: #3f6fc9;
+    --color-primary-light: #8eafff;
+    --color-secondary: #8793a6;
+    --color-bg: #171a1f;
+    --color-bg-secondary: #232830;
+    --color-bg-tertiary: #343c48;
+    --color-text: #edf1f5;
+    --color-text-secondary: #c0c8d2;
+    --color-text-tertiary: #8e99a8;
+    --color-border: #46515f;
+    --color-border-light: #687688;
+}
+
+:root[data-theme="paper"] {
+    --color-primary: #2764a5;
+    --color-primary-dark: #1e4f85;
+    --color-primary-light: #4e86c5;
+    --color-secondary: #6f7f8f;
+    --color-bg: #f4f1eb;
+    --color-bg-secondary: #fffdf8;
+    --color-bg-tertiary: #e8e3d9;
+    --color-text: #202b36;
+    --color-text-secondary: #465463;
+    --color-text-tertiary: #708090;
+    --color-border: #c9c2b5;
+    --color-border-light: #aaa294;
+}
+
+:root[data-theme="forest"] {
+    --color-primary: #c58b52;
+    --color-primary-dark: #9f6938;
+    --color-primary-light: #e2ad72;
+    --color-secondary: #6e9683;
+    --color-bg: #101b19;
+    --color-bg-secondary: #1b2a27;
+    --color-bg-tertiary: #29403a;
+    --color-text: #edf4ee;
+    --color-text-secondary: #c1d1c7;
+    --color-text-tertiary: #8fa99a;
+    --color-border: #486258;
+    --color-border-light: #698476;
+}
+
 /* Dark mode as default */
 @media (prefers-color-scheme: light) {
     :root {
@@ -168,7 +213,7 @@ a:hover {
 
 .btn-primary:hover:not(:disabled) {
     background-color: var(--color-primary-dark);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 40%, transparent);
 }
 
 .btn-secondary {
@@ -220,7 +265,7 @@ input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--color-primary);
     background-color: var(--color-bg);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 10%, transparent);
 }
 
 .input-group {
