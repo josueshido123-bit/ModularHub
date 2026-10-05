@@ -209,10 +209,11 @@
 .wishlist-empty { grid-column: 1 / -1; padding: var(--space-2xl); color: var(--color-text-tertiary); text-align: center; }
 .wishlist-form-modal, .wishlist-detail-modal { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: var(--space-lg); background: rgba(0, 0, 0, .72); backdrop-filter: blur(4px); animation: fadeIn 180ms ease-out; }
 .wishlist-form-panel, .wishlist-detail-panel { position: relative; width: min(680px, 94vw); max-height: 90vh; overflow-y: auto; padding: var(--space-xl); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); animation: modalSlideIn 220ms ease; }
+.wishlist-form-panel { animation: fadeIn 220ms ease-out; }
 .wishlist-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
 .wishlist-file-label { position: relative; width: fit-content; }
 .wishlist-file-label input { display: none; }
-.wishlist-media-editor { position: relative; display: grid; place-items: center; width: 100%; height: 220px; margin: var(--space-md) 0 var(--space-sm); overflow: hidden; cursor: grab; background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: var(--radius-md); user-select: none; touch-action: none; }
+.wishlist-media-editor { position: relative; display: grid; grid-template-rows: minmax(0, 1fr); place-items: center; width: 100%; height: 220px; margin: var(--space-md) 0 var(--space-sm); overflow: hidden; cursor: grab; background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: var(--radius-md); user-select: none; touch-action: none; }
 .wishlist-media-editor:active { cursor: grabbing; }
 .wishlist-media-editor img, .wishlist-media-editor video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 .wishlist-upload-empty { padding: var(--space-lg); color: var(--color-text-tertiary); text-align: center; font-size: var(--font-size-sm); }
@@ -276,10 +277,11 @@
 .bookmarks-empty { grid-column: 1 / -1; padding: var(--space-2xl); color: var(--color-text-tertiary); text-align: center; }
 .bookmarks-form-modal, .bookmarks-detail-modal { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: var(--space-lg); background: rgba(0, 0, 0, .72); backdrop-filter: blur(4px); animation: fadeIn 180ms ease-out; }
 .bookmarks-form-panel, .bookmarks-detail-panel { position: relative; width: min(680px, 94vw); max-height: 90vh; overflow-y: auto; padding: var(--space-xl); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); animation: modalSlideIn 220ms ease; }
+.bookmarks-form-panel { animation: fadeIn 220ms ease-out; }
 .bookmarks-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
 .bookmarks-file-label { position: relative; width: fit-content; }
 .bookmarks-file-label input { display: none; }
-.bookmarks-media-editor { position: relative; display: grid; place-items: center; width: 100%; height: 220px; margin: var(--space-md) 0 var(--space-sm); overflow: hidden; cursor: grab; background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: var(--radius-md); touch-action: none; user-select: none; }
+.bookmarks-media-editor { position: relative; display: grid; grid-template-rows: minmax(0, 1fr); place-items: center; width: 100%; height: 220px; margin: var(--space-md) 0 var(--space-sm); overflow: hidden; cursor: grab; background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: var(--radius-md); touch-action: none; user-select: none; }
 .bookmarks-media-editor:active { cursor: grabbing; }
 .bookmarks-media-editor img, .bookmarks-media-editor video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 .bookmarks-upload-empty { padding: var(--space-lg); color: var(--color-text-tertiary); text-align: center; font-size: var(--font-size-sm); }

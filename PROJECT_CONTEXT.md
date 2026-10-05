@@ -2,7 +2,7 @@
 
 > A polished, modern, highly extensible dashboard web application with a modular architecture.
 
-**Last Updated:** 2026-09-10  
+**Last Updated:** 2026-10-05  
 **Version:** 1.4.3  
 **Status:** MVP with account-scoped Finance, Wishlist, and Bookmarks modules
 
@@ -307,7 +307,7 @@ src/modules/wishlist/
     name: string,
     mediaUrl: string,
     mediaType: 'image' | 'gif' | 'video',
-    mediaPosition: string,        // CSS object-position, e.g. '50% 50%'
+    mediaPosition: string,        // Normalized crop point, e.g. '50% 50%'
     price: number | null,
     notes: string,
     link: string,
@@ -340,8 +340,12 @@ src/modules/wishlist/
 ✅ **Countdowns** - Target dates display remaining days or elapsed days  
 ✅ **Completion** - Items can be completed and reopened  
 ✅ **History** - Added, edited, completed, reopened, and removed actions are recorded with compact media thumbnails  
+✅ **Catalogue Deletion** - Each card has a confirmed Delete action; successful removals are recorded in history  
 ✅ **Responsive Layout** - Fixed-size catalogue adapts to mobile without stretching cards  
-✅ **Account Storage** - Wishlist data uses the active account namespace
+✅ **Account Storage** - Wishlist data uses the active account namespace  
+✅ **Save Failure Recovery** - Failed storage writes restore the last persisted data and show an error instead of leaving unsaved changes in memory  
+✅ **Media Preview State** - Add/Edit forms reset stale drafts; pasted URLs, media type changes, and uploads update the crop preview  
+✅ **Grab-and-Pan Cropping** - Pointer capture tracks the grabbed point; image translation follows mouse deltas 1:1 and clamps at crop boundaries  
 ✅ **Animated Sections** - Catalogue cards and history rows enter with staggered motion; detail and form overlays use modal transitions  
 ✅ **Animated Closing** - Module, Settings, Finance, Wishlist form, and Wishlist detail overlays use coordinated fade/scale exit animations  
 
@@ -372,7 +376,9 @@ wishlistService.getHistory() → [HistoryEntry]
 
 Themes are applied through shared CSS variables on `document.documentElement`, so the dashboard, module cards, modals, forms, buttons, Finance, Wishlist, and Settings all change together. The selected theme is persisted through account-scoped `theme_settings` data.
 
-Wishlist uses the shared animation language from `src/styles/animations.css`: fixed-size cards and history rows use a short staggered entrance, tabs use a restrained hover transition, item forms/detail views use fade and modal slide transitions, and all overlays use the coordinated `fadeOut`/`modalSlideOut` close pair. Reduced-motion preferences disable these effects through the global animation rule.
+Wishlist uses the shared animation language from `src/styles/animations.css`: fixed-size cards and history rows use a short staggered entrance, tabs use a restrained hover transition, crop form panels fade without moving, detail panels use a modal slide, and all overlays use the coordinated `fadeOut`/`modalSlideOut` close pair. Reduced-motion preferences disable these effects through the global animation rule.
+
+Wishlist and Bookmarks media editors share these crop interaction rules: the editor frame has a fixed 220px height and a constrained grid row; preview images are scaled to provide pan room; pointer deltas move the image from its grabbed point at 1:1 speed until a crop boundary is reached. `mediaPosition` stores the normalized crop point and is applied to editor previews and catalogue/detail media. History thumbnails remain unscaled.
 
 All module scroll regions keep wheel and touch scrolling available without visible scrollbar chrome. This prevents a native scrollbar from flashing during Wishlist section changes or shifting the catalogue layout when content becomes scrollable.
 
@@ -408,7 +414,7 @@ src/modules/bookmarks/
     url: string,
     mediaUrl: string,
     mediaType: 'image' | 'gif' | 'video',
-    mediaPosition: string,      // CSS object-position, e.g. '50% 50%'
+    mediaPosition: string,      // Normalized crop point, e.g. '50% 50%'
     description: string,
     createdAt: ISO8601,
     updatedAt: ISO8601
@@ -422,7 +428,8 @@ src/modules/bookmarks/
 ✅ **Bookmark Links** - Required URL with an open-in-new-tab detail action  
 ✅ **Descriptions** - Optional explanatory text shown on cards and detail views  
 ✅ **Media URLs and Uploads** - Images, GIFs, and videos from URLs or local files  
-✅ **Media Positioning** - Drag uploaded media to choose its crop position  
+✅ **Media Positioning** - Drag uploaded or URL-based media from the point grabbed; movement follows the pointer 1:1 and is saved as a normalized crop point  
+✅ **Fresh Media Previews** - Add/Edit forms clear stale drafts and refresh the preview when media URL/type changes  
 ✅ **Hover Playback** - GIFs and videos load/play only on hover or keyboard focus  
 ✅ **Add, Edit, and Delete** - Full bookmark lifecycle with confirmation before deletion  
 ✅ **Detail View** - Larger media and complete bookmark information  
@@ -718,14 +725,17 @@ No testing framework currently implemented. Recommended:
 ✅ Wishlist image/GIF/video media renders in catalogue, detail, and compact history views  
 ✅ GIFs and videos load/play only on hover or keyboard focus and stop when leaving  
 ✅ Local media upload converts files to persistent data URLs  
-✅ Dragging the upload preview updates and persists `mediaPosition` crop coordinates  
+✅ Wishlist uploaded and URL-based media previews load, can be dragged from the grabbed point at 1:1 mouse speed, and persist `mediaPosition` across refresh  
+✅ Crop drags remain aligned while form panels fade in; 220px crop frames do not resize to intrinsic image dimensions  
+✅ Wishlist form reopening starts with a clean draft and does not override saved item media or crop values  
+✅ Wishlist storage write failures roll back in-memory changes and report an error; confirmed catalogue deletion records history  
 ✅ Catalogue cards remain fixed-size on desktop and mobile  
 ✅ Theme selection applies shared tokens across modules and persists per account  
 ✅ Module, Settings, Finance, and Wishlist overlays show coordinated close animations  
 ✅ Wishlist section changes keep the body stable and do not flash visible scrollbars  
 ✅ Wishlist and Bookmarks reserve stable responsive body viewports across their library/history sections  
 ✅ Bookmarks module registers beside Finance and Wishlist without changing their data  
-✅ Bookmarks add flow saves links, descriptions, uploaded media, and dragged crop positions  
+✅ Bookmarks add/edit flows save links, descriptions, uploaded or URL-based media, and pointer-following crop positions across refresh  
 ✅ Bookmarks detail, edit, delete, history, media, animations, and mobile layout work live  
 ✅ Bookmarks uses a distinct featured-shelf, quick-access, and timeline composition rather than Wishlist's catalogue structure  
 ✅ Bookmarks Library and History keep stable body dimensions without visible native scrollbar flashes  

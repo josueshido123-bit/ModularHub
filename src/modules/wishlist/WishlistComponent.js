@@ -38,7 +38,21 @@ export class WishlistComponent {
         const isHoverMedia = item.mediaType === 'video' || item.mediaType === 'gif' || /\.gif(?:$|[?#])/i.test(item.mediaUrl);
         const position = this.escape(item.mediaPosition || '50% 50%');
         if (isHoverMedia) return `<div class="wishlist-media-placeholder wishlist-hover-media ${size === 'history' ? 'history' : ''}" data-media-url="${url}" data-media-type="${item.mediaType === 'video' ? 'video' : 'gif'}" data-media-position="${position}" data-media-alt="${this.escape(item.name || '')}">${item.mediaType === 'video' ? '▶' : 'GIF'}</div>`;
-        return `<img src="${url}" alt="${this.escape(item.name || '')}" loading="lazy" style="object-position:${position}">`;
+        return `<img src="${url}" alt="${this.escape(item.name || '')}" loading="lazy" style="${this.mediaStyle(position, size)}">`;
+    }
+
+    mediaStyle(position, size = 'card') {
+        const [xValue, yValue] = String(position || '50% 50%').split(/\s+/);
+        const parsePercent = value => {
+            const parsed = Number.parseFloat(value);
+            return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 50;
+        };
+        const transform = size === 'history' ? 'none' : this.mediaTransform(parsePercent(xValue), parsePercent(yValue));
+        return `object-position:50% 50%;transform:${transform};transform-origin:50% 50%`;
+    }
+
+    mediaTransform(x, y) {
+        return `translate3d(${(x - 50) * 0.5}%, ${(y - 50) * 0.5}%, 0) scale(1.5)`;
     }
 
     renderEditorMedia(item) {
@@ -48,7 +62,7 @@ export class WishlistComponent {
         if (!mediaUrl) return '<div class="wishlist-upload-empty">Choose an image, GIF, or video to position it here</div>';
         const tag = mediaType === 'video' ? 'video' : 'img';
         const attributes = tag === 'video' ? 'muted playsinline' : `alt="${this.escape(item?.name || 'Wishlist media')}"`;
-        return `<${tag} src="${this.escape(mediaUrl)}" ${attributes} style="object-position:${this.escape(position)}"></${tag}>`;
+        return `<${tag} src="${this.escape(mediaUrl)}" ${attributes} style="${this.mediaStyle(position, 'editor')}"></${tag}>`;
     }
 
     renderForm() {
@@ -66,11 +80,38 @@ export class WishlistComponent {
 
     attachEvents(container) {
         container.querySelectorAll('.wishlist-tab').forEach(button => button.addEventListener('click', () => this.rerender(container, button.dataset.view)));
-        container.querySelector('.wishlist-add-btn')?.addEventListener('click', () => { this.state.editingId = null; container.querySelector('.wishlist-form-modal').classList.remove('hidden'); });
+        container.querySelector('.wishlist-add-btn')?.addEventListener('click', () => {
+            this.state.editingId = null;
+            this.mediaDraft = {};
+            this.rerender(container);
+            container.querySelector('.wishlist-form-modal').classList.remove('hidden');
+        });
         container.querySelector('.wishlist-form-close')?.addEventListener('click', () => this.closeOverlay(container.querySelector('.wishlist-form-modal')));
         container.querySelector('.wishlist-media-file')?.addEventListener('change', event => this.handleMediaFile(event, container));
+        container.querySelector('.wishlist-form input[name="mediaUrl"]')?.addEventListener('input', () => this.updateMediaPreview(container));
+        container.querySelector('.wishlist-form select[name="mediaType"]')?.addEventListener('change', () => this.updateMediaPreview(container));
         this.setupMediaEditor(container);
         container.querySelector('.wishlist-form')?.addEventListener('submit', event => this.saveItem(event, container));
+        container.querySelectorAll('.wishlist-card-actions').forEach(actions => {
+            if (actions.querySelector('.wishlist-delete-btn')) return;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn btn-sm btn-secondary wishlist-delete-btn';
+            button.textContent = 'Delete';
+            button.addEventListener('click', event => {
+                event.stopPropagation();
+                if (!confirm('Delete this wishlist item?')) return;
+                const itemId = event.currentTarget.closest('.wishlist-card').dataset.id;
+                if (!wishlistService.removeItem(itemId)) {
+                    showToast('Wishlist item could not be deleted. Browser storage may be full.', 'error');
+                    this.rerender(container);
+                    return;
+                }
+                showToast('Wishlist item deleted', 'success');
+                this.rerender(container);
+            });
+            actions.append(button);
+        });
         container.querySelectorAll('.wishlist-card-open').forEach(button => {
             button.addEventListener('click', event => { this.state.detailId = event.currentTarget.closest('.wishlist-card').dataset.id; this.rerender(container); });
         });
@@ -80,11 +121,29 @@ export class WishlistComponent {
             media.addEventListener('focus', () => this.activateHoverMedia(media));
             media.addEventListener('blur', () => this.deactivateHoverMedia(media));
         });
-        container.querySelectorAll('.wishlist-edit-btn').forEach(button => button.addEventListener('click', event => { event.stopPropagation(); this.state.editingId = event.target.closest('.wishlist-card').dataset.id; container.querySelector('.wishlist-form-modal').outerHTML = this.renderForm(); container.querySelector('.wishlist-form-modal').classList.remove('hidden'); this.attachEvents(container); }));
-        container.querySelectorAll('.wishlist-complete-btn').forEach(button => button.addEventListener('click', event => { event.stopPropagation(); wishlistService.completeItem(event.target.closest('.wishlist-card').dataset.id); this.rerender(container); }));
+        container.querySelectorAll('.wishlist-edit-btn').forEach(button => button.addEventListener('click', event => {
+            event.stopPropagation();
+            this.mediaDraft = {};
+            this.state.editingId = event.currentTarget.closest('.wishlist-card').dataset.id;
+            this.rerender(container);
+            container.querySelector('.wishlist-form-modal').classList.remove('hidden');
+        }));
+        container.querySelectorAll('.wishlist-complete-btn').forEach(button => button.addEventListener('click', event => {
+            event.stopPropagation();
+            const item = wishlistService.completeItem(event.currentTarget.closest('.wishlist-card').dataset.id);
+            if (!item) showToast('Wishlist item could not be updated. Browser storage may be full.', 'error');
+            this.rerender(container);
+        }));
         container.querySelector('.wishlist-detail-close')?.addEventListener('click', () => this.closeDetail(container));
-        container.querySelector('.detail-edit-btn')?.addEventListener('click', () => { this.state.editingId = this.state.detailId; this.state.detailId = null; this.rerender(container); container.querySelector('.wishlist-form-modal').classList.remove('hidden'); });
-        container.querySelector('.detail-complete-btn')?.addEventListener('click', () => { wishlistService.completeItem(this.state.detailId); this.state.detailId = null; this.rerender(container); });
+        container.querySelector('.detail-edit-btn')?.addEventListener('click', () => { this.mediaDraft = {}; this.state.editingId = this.state.detailId; this.state.detailId = null; this.rerender(container); container.querySelector('.wishlist-form-modal').classList.remove('hidden'); });
+        container.querySelector('.detail-complete-btn')?.addEventListener('click', () => {
+            if (!wishlistService.completeItem(this.state.detailId)) {
+                showToast('Wishlist item could not be updated. Browser storage may be full.', 'error');
+                return;
+            }
+            this.state.detailId = null;
+            this.rerender(container);
+        });
     }
 
     saveItem(event, container) {
@@ -93,9 +152,12 @@ export class WishlistComponent {
         const input = Object.fromEntries(data.entries());
         if (!input.name.trim()) return showToast('Add a name first', 'error');
         input.mediaPosition = input.mediaPosition || '50% 50%';
-        if (this.state.editingId) wishlistService.updateItem(this.state.editingId, input); else wishlistService.addItem(input);
-        showToast(this.state.editingId ? 'Wishlist item updated' : 'Wishlist item added', 'success');
+        const isEditing = Boolean(this.state.editingId);
+        const item = isEditing ? wishlistService.updateItem(this.state.editingId, input) : wishlistService.addItem(input);
+        if (!item) return showToast('Wishlist item could not be saved. Browser storage may be full.', 'error');
+        showToast(isEditing ? 'Wishlist item updated' : 'Wishlist item added', 'success');
         this.state.editingId = null;
+        this.mediaDraft = {};
         this.rerender(container);
     }
 
@@ -109,12 +171,29 @@ export class WishlistComponent {
             form.querySelector('input[name="mediaUrl"]').value = this.mediaDraft.url;
             form.querySelector('select[name="mediaType"]').value = this.mediaDraft.type;
             form.querySelector('input[name="mediaPosition"]').value = this.mediaDraft.position;
-            const editor = container.querySelector('.wishlist-media-editor');
-            editor.dataset.position = this.mediaDraft.position;
-            editor.innerHTML = this.renderEditorMedia({ name: form.querySelector('input[name="name"]').value });
-            this.setupMediaEditor(container);
+            this.renderMediaEditor(container);
         };
         reader.readAsDataURL(file);
+    }
+
+    updateMediaPreview(container) {
+        const form = container.querySelector('.wishlist-form');
+        this.mediaDraft = {
+            url: form.querySelector('input[name="mediaUrl"]').value.trim(),
+            type: form.querySelector('select[name="mediaType"]').value,
+            position: form.querySelector('input[name="mediaPosition"]').value || '50% 50%'
+        };
+        this.renderMediaEditor(container);
+    }
+
+    renderMediaEditor(container) {
+        const currentEditor = container.querySelector('.wishlist-media-editor');
+        const editor = currentEditor.cloneNode(false);
+        editor.removeAttribute('data-bound');
+        editor.dataset.position = this.mediaDraft.position || '50% 50%';
+        editor.innerHTML = this.renderEditorMedia({ name: container.querySelector('.wishlist-form input[name="name"]').value });
+        currentEditor.replaceWith(editor);
+        this.setupMediaEditor(container);
     }
 
     setupMediaEditor(container) {
@@ -124,18 +203,25 @@ export class WishlistComponent {
         editor.addEventListener('pointerdown', event => {
             event.preventDefault();
             try { editor.setPointerCapture(event.pointerId); } catch {}
+            const rect = editor.getBoundingClientRect();
+            const startX = event.clientX;
+            const startY = event.clientY;
+            const startPosition = container.querySelector('input[name="mediaPosition"]').value.split(/\s+/).map(value => {
+                const parsed = Number.parseFloat(value);
+                return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 50;
+            });
             const move = moveEvent => {
-                const rect = editor.getBoundingClientRect();
-                const x = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100));
-                const y = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100));
+                const x = Math.max(0, Math.min(100, startPosition[0] + ((moveEvent.clientX - startX) / rect.width) * 200));
+                const y = Math.max(0, Math.min(100, startPosition[1] + ((moveEvent.clientY - startY) / rect.height) * 200));
                 const position = `${Math.round(x)}% ${Math.round(y)}%`;
                 editor.dataset.position = position;
-                editor.querySelector('img, video').style.objectPosition = position;
+                editor.querySelector('img, video').style.transform = this.mediaTransform(x, y);
                 container.querySelector('input[name="mediaPosition"]').value = position;
             };
-            const stop = () => { editor.removeEventListener('pointermove', move); editor.removeEventListener('pointerup', stop); };
+            const stop = () => { editor.removeEventListener('pointermove', move); editor.removeEventListener('pointerup', stop); editor.removeEventListener('pointercancel', stop); };
             editor.addEventListener('pointermove', move);
             editor.addEventListener('pointerup', stop, { once: true });
+            editor.addEventListener('pointercancel', stop, { once: true });
         });
     }
 
@@ -158,7 +244,7 @@ export class WishlistComponent {
         const media = document.createElement(placeholder.dataset.mediaType === 'video' ? 'video' : 'img');
         media.src = placeholder.dataset.mediaUrl;
         media.alt = placeholder.dataset.mediaAlt || '';
-        media.style.objectPosition = placeholder.dataset.mediaPosition || '50% 50%';
+        media.style.cssText = this.mediaStyle(placeholder.dataset.mediaPosition || '50% 50%', placeholder.classList.contains('history') ? 'history' : 'card');
         if (media.tagName === 'VIDEO') { media.muted = true; media.loop = true; media.autoplay = true; media.playsInline = true; media.play().catch(() => {}); }
         placeholder.replaceChildren(media);
         placeholder.classList.add('is-playing');

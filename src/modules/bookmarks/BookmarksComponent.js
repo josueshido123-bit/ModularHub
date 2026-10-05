@@ -47,7 +47,21 @@ export class BookmarksComponent {
         const position = this.escape(item.mediaPosition || '50% 50%');
         const hoverMedia = item.mediaType === 'video' || item.mediaType === 'gif' || /\.gif(?:$|[?#])/i.test(item.mediaUrl);
         if (hoverMedia) return `<div class="bookmarks-media-placeholder bookmarks-hover-media ${size === 'history' ? 'history' : ''}" data-media-url="${url}" data-media-type="${item.mediaType === 'video' ? 'video' : 'gif'}" data-media-position="${position}" data-media-alt="${this.escape(item.name)}">${item.mediaType === 'video' ? '▶' : 'GIF'}</div>`;
-        return `<img src="${url}" alt="${this.escape(item.name)}" loading="lazy" style="object-position:${position}">`;
+        return `<img src="${url}" alt="${this.escape(item.name)}" loading="lazy" style="${this.mediaStyle(position, size)}">`;
+    }
+
+    mediaStyle(position, size = 'card') {
+        const [xValue, yValue] = String(position || '50% 50%').split(/\s+/);
+        const parsePercent = value => {
+            const parsed = Number.parseFloat(value);
+            return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 50;
+        };
+        const transform = size === 'history' ? 'none' : this.mediaTransform(parsePercent(xValue), parsePercent(yValue));
+        return `object-position:50% 50%;transform:${transform};transform-origin:50% 50%`;
+    }
+
+    mediaTransform(x, y) {
+        return `translate3d(${(x - 50) * 0.5}%, ${(y - 50) * 0.5}%, 0) scale(1.5)`;
     }
 
     renderEditorMedia(item) {
@@ -56,7 +70,7 @@ export class BookmarksComponent {
         const position = this.mediaDraft.position || item?.mediaPosition || '50% 50%';
         if (!url) return '<div class="bookmarks-upload-empty">Choose media to preview and position it</div>';
         const tag = type === 'video' ? 'video' : 'img';
-        return `<${tag} src="${this.escape(url)}" ${tag === 'video' ? 'muted playsinline' : `alt="${this.escape(item?.name || 'Bookmark media')}"`} style="object-position:${this.escape(position)}"></${tag}>`;
+        return `<${tag} src="${this.escape(url)}" ${tag === 'video' ? 'muted playsinline' : `alt="${this.escape(item?.name || 'Bookmark media')}"`} style="${this.mediaStyle(position, 'editor')}"></${tag}>`;
     }
 
     renderForm() {
@@ -73,9 +87,16 @@ export class BookmarksComponent {
 
     attachEvents(container) {
         container.querySelectorAll('.bookmarks-tab').forEach(button => button.addEventListener('click', () => this.rerender(container, button.dataset.view)));
-        container.querySelector('.bookmarks-add-btn')?.addEventListener('click', () => { this.state.editingId = null; this.mediaDraft = {}; container.querySelector('.bookmarks-form-modal').classList.remove('hidden'); });
+        container.querySelector('.bookmarks-add-btn')?.addEventListener('click', () => {
+            this.state.editingId = null;
+            this.mediaDraft = {};
+            this.rerender(container);
+            container.querySelector('.bookmarks-form-modal').classList.remove('hidden');
+        });
         container.querySelector('.bookmarks-form-close')?.addEventListener('click', () => this.closeOverlay(container.querySelector('.bookmarks-form-modal')));
         container.querySelector('.bookmarks-media-file')?.addEventListener('change', event => this.handleMediaFile(event, container));
+        container.querySelector('.bookmarks-form input[name="mediaUrl"]')?.addEventListener('input', () => this.updateMediaPreview(container));
+        container.querySelector('.bookmarks-form select[name="mediaType"]')?.addEventListener('change', () => this.updateMediaPreview(container));
         this.setupMediaEditor(container);
         container.querySelector('.bookmarks-form')?.addEventListener('submit', event => this.saveItem(event, container));
         container.querySelectorAll('.bookmarks-card-open').forEach(button => button.addEventListener('click', event => { this.state.detailId = event.currentTarget.closest('.bookmarks-card').dataset.id; this.rerender(container); }));
@@ -83,16 +104,80 @@ export class BookmarksComponent {
         container.querySelectorAll('.bookmarks-edit-btn').forEach(button => button.addEventListener('click', event => { event.stopPropagation(); this.openEditor(container, event.target.closest('.bookmarks-card').dataset.id); }));
         container.querySelectorAll('.bookmarks-delete-btn').forEach(button => button.addEventListener('click', event => { event.stopPropagation(); this.deleteItem(container, event.target.closest('.bookmarks-card').dataset.id); }));
         container.querySelector('.bookmarks-detail-close')?.addEventListener('click', () => this.closeDetail(container));
-        container.querySelector('.bookmarks-detail-edit')?.addEventListener('click', () => { const id = this.state.detailId; this.state.detailId = null; this.state.editingId = id; this.rerender(container); container.querySelector('.bookmarks-form-modal').classList.remove('hidden'); });
+        container.querySelector('.bookmarks-detail-edit')?.addEventListener('click', () => { const id = this.state.detailId; this.state.detailId = null; this.state.editingId = id; this.mediaDraft = {}; this.rerender(container); container.querySelector('.bookmarks-form-modal').classList.remove('hidden'); });
         container.querySelector('.bookmarks-detail-delete')?.addEventListener('click', () => this.deleteItem(container, this.state.detailId, true));
     }
 
-    openEditor(container, itemId) { this.state.editingId = itemId; this.mediaDraft = {}; container.querySelector('.bookmarks-form-modal').outerHTML = this.renderForm(); container.querySelector('.bookmarks-form-modal').classList.remove('hidden'); this.attachEvents(container); }
+    openEditor(container, itemId) { this.state.editingId = itemId; this.mediaDraft = {}; this.rerender(container); container.querySelector('.bookmarks-form-modal').classList.remove('hidden'); }
     deleteItem(container, itemId, fromDetail = false) { if (!confirm('Delete this bookmark?')) return; bookmarksService.removeItem(itemId); this.state.detailId = fromDetail ? null : this.state.detailId; showToast('Bookmark deleted', 'success'); this.rerender(container); }
     saveItem(event, container) { event.preventDefault(); const input = Object.fromEntries(new FormData(event.target).entries()); if (!input.name.trim() || !input.url.trim()) return showToast('Name and link are required', 'error'); input.mediaPosition ||= '50% 50%'; if (this.state.editingId) bookmarksService.updateItem(this.state.editingId, input); else bookmarksService.addItem(input); showToast(this.state.editingId ? 'Bookmark updated' : 'Bookmark saved', 'success'); this.state.editingId = null; this.mediaDraft = {}; this.rerender(container); }
-    handleMediaFile(event, container) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { this.mediaDraft = { url: reader.result, type: file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image', position: '50% 50%' }; const form = container.querySelector('.bookmarks-form'); form.querySelector('input[name="mediaUrl"]').value = this.mediaDraft.url; form.querySelector('select[name="mediaType"]').value = this.mediaDraft.type; form.querySelector('input[name="mediaPosition"]').value = this.mediaDraft.position; const editor = container.querySelector('.bookmarks-media-editor'); editor.dataset.position = this.mediaDraft.position; editor.innerHTML = this.renderEditorMedia({ name: form.querySelector('input[name="name"]').value }); this.setupMediaEditor(container); }; reader.readAsDataURL(file); }
-    setupMediaEditor(container) { const editor = container.querySelector('.bookmarks-media-editor'); if (!editor || editor.dataset.bound === 'true' || !editor.querySelector('img, video')) return; editor.dataset.bound = 'true'; editor.addEventListener('pointerdown', event => { event.preventDefault(); try { editor.setPointerCapture(event.pointerId); } catch {} const move = moveEvent => { const rect = editor.getBoundingClientRect(); const position = `${Math.round(Math.max(0, Math.min(100, (moveEvent.clientX - rect.left) / rect.width * 100)))}% ${Math.round(Math.max(0, Math.min(100, (moveEvent.clientY - rect.top) / rect.height * 100)))}%`; editor.dataset.position = position; editor.querySelector('img, video').style.objectPosition = position; container.querySelector('input[name="mediaPosition"]').value = position; }; const stop = () => { editor.removeEventListener('pointermove', move); editor.removeEventListener('pointerup', stop); }; editor.addEventListener('pointermove', move); editor.addEventListener('pointerup', stop, { once: true }); }); }
-    activateHoverMedia(placeholder) { if (placeholder.querySelector('img, video')) return; const media = document.createElement(placeholder.dataset.mediaType === 'video' ? 'video' : 'img'); media.src = placeholder.dataset.mediaUrl; media.alt = placeholder.dataset.mediaAlt || ''; media.style.objectPosition = placeholder.dataset.mediaPosition || '50% 50%'; if (media.tagName === 'VIDEO') { media.muted = true; media.loop = true; media.autoplay = true; media.playsInline = true; media.play().catch(() => {}); } placeholder.replaceChildren(media); placeholder.classList.add('is-playing'); }
+    handleMediaFile(event, container) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            this.mediaDraft = { url: reader.result, type: file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image', position: '50% 50%' };
+            const form = container.querySelector('.bookmarks-form');
+            form.querySelector('input[name="mediaUrl"]').value = this.mediaDraft.url;
+            form.querySelector('select[name="mediaType"]').value = this.mediaDraft.type;
+            form.querySelector('input[name="mediaPosition"]').value = this.mediaDraft.position;
+            this.renderMediaEditor(container);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    updateMediaPreview(container) {
+        const form = container.querySelector('.bookmarks-form');
+        this.mediaDraft = {
+            url: form.querySelector('input[name="mediaUrl"]').value.trim(),
+            type: form.querySelector('select[name="mediaType"]').value,
+            position: form.querySelector('input[name="mediaPosition"]').value || '50% 50%'
+        };
+        this.renderMediaEditor(container);
+    }
+
+    renderMediaEditor(container) {
+        const currentEditor = container.querySelector('.bookmarks-media-editor');
+        const editor = currentEditor.cloneNode(false);
+        editor.removeAttribute('data-bound');
+        editor.dataset.position = this.mediaDraft.position || '50% 50%';
+        editor.innerHTML = this.renderEditorMedia({ name: container.querySelector('.bookmarks-form input[name="name"]').value });
+        currentEditor.replaceWith(editor);
+        this.setupMediaEditor(container);
+    }
+    setupMediaEditor(container) {
+        const editor = container.querySelector('.bookmarks-media-editor');
+        if (!editor || editor.dataset.bound === 'true' || !editor.querySelector('img, video')) return;
+        editor.dataset.bound = 'true';
+        editor.addEventListener('pointerdown', event => {
+            event.preventDefault();
+            try { editor.setPointerCapture(event.pointerId); } catch {}
+            const rect = editor.getBoundingClientRect();
+            const startX = event.clientX;
+            const startY = event.clientY;
+            const startPosition = container.querySelector('input[name="mediaPosition"]').value.split(/\s+/).map(value => {
+                const parsed = Number.parseFloat(value);
+                return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 50;
+            });
+            const move = moveEvent => {
+                const x = Math.max(0, Math.min(100, startPosition[0] + ((moveEvent.clientX - startX) / rect.width) * 200));
+                const y = Math.max(0, Math.min(100, startPosition[1] + ((moveEvent.clientY - startY) / rect.height) * 200));
+                const position = `${Math.round(x)}% ${Math.round(y)}%`;
+                editor.dataset.position = position;
+                editor.querySelector('img, video').style.transform = this.mediaTransform(x, y);
+                container.querySelector('input[name="mediaPosition"]').value = position;
+            };
+            const stop = () => {
+                editor.removeEventListener('pointermove', move);
+                editor.removeEventListener('pointerup', stop);
+                editor.removeEventListener('pointercancel', stop);
+            };
+            editor.addEventListener('pointermove', move);
+            editor.addEventListener('pointerup', stop, { once: true });
+            editor.addEventListener('pointercancel', stop, { once: true });
+        });
+    }
+    activateHoverMedia(placeholder) { if (placeholder.querySelector('img, video')) return; const media = document.createElement(placeholder.dataset.mediaType === 'video' ? 'video' : 'img'); media.src = placeholder.dataset.mediaUrl; media.alt = placeholder.dataset.mediaAlt || ''; media.style.cssText = this.mediaStyle(placeholder.dataset.mediaPosition || '50% 50%', placeholder.classList.contains('history') ? 'history' : 'card'); if (media.tagName === 'VIDEO') { media.muted = true; media.loop = true; media.autoplay = true; media.playsInline = true; media.play().catch(() => {}); } placeholder.replaceChildren(media); placeholder.classList.add('is-playing'); }
     deactivateHoverMedia(placeholder) { const media = placeholder.querySelector('video'); if (media) media.pause(); placeholder.innerHTML = placeholder.dataset.mediaType === 'video' ? '▶' : 'GIF'; placeholder.classList.remove('is-playing'); }
     closeOverlay(overlay) { if (!overlay || overlay.classList.contains('is-closing')) return; overlay.classList.add('is-closing'); setTimeout(() => overlay.classList.add('hidden'), 220); }
     closeDetail(container) { const overlay = container.querySelector('.bookmarks-detail-modal'); if (!overlay) return; overlay.classList.add('is-closing'); setTimeout(() => { this.state.detailId = null; this.rerender(container); }, 220); }

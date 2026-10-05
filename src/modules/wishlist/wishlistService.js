@@ -13,7 +13,11 @@ class WishlistService {
         this.data.history ||= [];
     }
 
-    saveData() { storageService.save(this.dataKey, this.data); }
+    saveData() {
+        const saved = storageService.save(this.dataKey, this.data);
+        if (!saved) this.loadData();
+        return saved;
+    }
 
     record(itemId, action, details = {}) {
         this.data.history.unshift({ id: generateId(), itemId, action, details, date: new Date().toISOString() });
@@ -27,8 +31,7 @@ class WishlistService {
         const item = { id: generateId(), name: input.name.trim(), mediaUrl: input.mediaUrl || '', mediaType: input.mediaType || 'image', mediaPosition: input.mediaPosition || '50% 50%', price: Number(input.price) > 0 ? Number(input.price) : null, notes: input.notes || '', link: input.link || '', targetDate: input.targetDate || null, status: 'active', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
         this.data.items.unshift(item);
         this.record(item.id, 'added', this.mediaDetails(item));
-        this.saveData();
-        return item;
+        return this.saveData() ? item : null;
     }
 
     updateItem(itemId, updates) {
@@ -36,8 +39,7 @@ class WishlistService {
         if (!item) return null;
         Object.assign(item, updates, { updatedAt: new Date().toISOString() });
         this.record(item.id, 'edited', this.mediaDetails(item));
-        this.saveData();
-        return item;
+        return this.saveData() ? item : null;
     }
 
     completeItem(itemId) {
@@ -46,16 +48,15 @@ class WishlistService {
         item.status = item.status === 'completed' ? 'active' : 'completed';
         item.updatedAt = new Date().toISOString();
         this.record(item.id, item.status === 'completed' ? 'completed' : 'reopened', this.mediaDetails(item));
-        this.saveData();
-        return item;
+        return this.saveData() ? item : null;
     }
 
     removeItem(itemId) {
         const item = this.getItem(itemId);
-        if (!item) return;
+        if (!item) return false;
         this.data.items = this.data.items.filter(existing => existing.id !== itemId);
         this.record(itemId, 'removed', this.mediaDetails(item));
-        this.saveData();
+        return this.saveData();
     }
 
     getItem(itemId) { return this.data.items.find(item => item.id === itemId) || null; }
