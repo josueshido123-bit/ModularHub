@@ -2,9 +2,9 @@
 
 > A polished, modern, highly extensible dashboard web application with a modular architecture.
 
-**Last Updated:** 2026-10-05  
+**Last Updated:** 2026-10-07  
 **Version:** 1.4.3  
-**Status:** MVP with account-scoped Finance, Wishlist, and Bookmarks modules
+**Status:** MVP with account-scoped Finance, Wishlist, Bookmarks, Countdowns, and Gacha Character Registry modules plus an in-app notification system
 
 ---
 
@@ -31,6 +31,8 @@ This design allows:
 - Open only what you need
 - Easy addition of new modules (just add a new card)
 - Scalable to many modules without overwhelming the UI
+
+Modules with category `gacha` render in a separate dashboard section under a centered divider labeled **Gacha**. Other module categories remain in the original toolbelt grid.
 
 ### System Design
 
@@ -75,12 +77,27 @@ This design allows:
 - Data import/export utilities
 - Prefixed key namespace for isolation
 
+**Account security caveat:** Accounts are client-side convenience profiles, not production authentication. Passwords are currently stored in browser `localStorage` without hashing; do not deploy this as secure public multi-user authentication without replacing it with a trusted server-side identity system.
+
 #### 4. **Utilities** (`src/utilities/uiUtils.js`)
 - Toast notifications
 - Currency formatting
 - Date formatting
 - ID generation
 - Debounce/throttle helpers
+
+#### 5. **Notification Service** (`src/services/notificationService.js`)
+- Account-scoped notification history and scheduled jobs
+- Live subscriptions for notification tray updates
+- Reusable create, schedule, deduplication, read, and clear APIs
+
+#### 6. **Notification Tray** (`src/components/NotificationTray.js`)
+- Header bell beside Settings, unread badge, and notification list
+- Mark one or all notifications read, or clear the visible history
+
+#### 7. **Media Utilities** (`src/utilities/mediaUtils.js`)
+- Shared position normalization, zoom clamping, transform generation, and drag/slider binding
+- Used by Wishlist, Bookmarks, Countdowns, and Gacha media editors
 
 ---
 
@@ -308,6 +325,7 @@ src/modules/wishlist/
     mediaUrl: string,
     mediaType: 'image' | 'gif' | 'video',
     mediaPosition: string,        // Normalized crop point, e.g. '50% 50%'
+    mediaScale: number,           // Zoom factor from 1 to 2.5; defaults to 1.5
     price: number | null,
     notes: string,
     link: string,
@@ -345,7 +363,8 @@ src/modules/wishlist/
 ✅ **Account Storage** - Wishlist data uses the active account namespace  
 ✅ **Save Failure Recovery** - Failed storage writes restore the last persisted data and show an error instead of leaving unsaved changes in memory  
 ✅ **Media Preview State** - Add/Edit forms reset stale drafts; pasted URLs, media type changes, and uploads update the crop preview  
-✅ **Grab-and-Pan Cropping** - Pointer capture tracks the grabbed point; image translation follows mouse deltas 1:1 and clamps at crop boundaries  
+✅ **Grab, Pan, and Zoom** - Drag from the grabbed point and resize from 1× to 2.5× with the shared scale slider
+✅ **Crop and Zoom Persistence** - Normalized crop point and scale are saved per item; older records default to their original 1.5× framing
 ✅ **Animated Sections** - Catalogue cards and history rows enter with staggered motion; detail and form overlays use modal transitions  
 ✅ **Animated Closing** - Module, Settings, Finance, Wishlist form, and Wishlist detail overlays use coordinated fade/scale exit animations  
 
@@ -372,13 +391,210 @@ wishlistService.getHistory() → [HistoryEntry]
 
 ---
 
+## ◷ Countdowns Module
+
+### Purpose
+
+Countdowns keeps upcoming dates visible in a live event board, with a featured next event and a browsable list of upcoming and elapsed moments.
+
+### Structure
+```
+src/modules/countdowns/
+├── countdownsService.js       # Account-scoped countdown CRUD
+├── CountdownsComponent.js     # Live timer board, media editor, and playback
+└── countdownsModule.js        # Module registration
+```
+
+### Countdown Data Model
+```javascript
+{
+    id: string,
+    title: string,
+    targetAt: ISO8601,
+    note: string,
+    mediaUrl: string,
+    mediaType: 'image' | 'gif' | 'video',
+    mediaPosition: string,      // Normalized crop point, e.g. '50% 50%'
+    mediaScale: number,         // Zoom factor from 1 to 2.5; defaults to 1.5
+    createdAt: ISO8601,
+    updatedAt: ISO8601
+}
+```
+
+### Features Implemented
+
+✅ **Live Countdown** - Days, hours, minutes, and seconds update once per second
+✅ **Next Event Feature** - The nearest upcoming moment is highlighted above the list
+✅ **Upcoming, Past, and All Filters** - Browse future and elapsed countdowns
+✅ **Add, Edit, and Delete** - Required title/date, optional note, and confirmation before deletion
+✅ **Countdown Media** - Attach an image, GIF, or video by URL or local upload
+✅ **Media Preview, Crop, and Zoom** - Drag media to pan and use the shared 1×–2.5× scale slider; both values persist
+✅ **GIF and Video Playback** - Media loads and plays on hover or keyboard focus
+✅ **Media Presentation** - Saved media appears in the featured countdown and list row
+✅ **Account Storage** - Countdown data uses the active account namespace
+✅ **Fixed Workspace** - List scrolls within a stable responsive module height
+✅ **Timer Cleanup** - The live update interval stops when its module modal is removed
+
+### CountdownsService API
+```javascript
+countdownsService.addCountdown(input) → Countdown | null
+countdownsService.updateCountdown(id, input) → Countdown | null
+countdownsService.removeCountdown(id) → boolean
+countdownsService.getCountdown(id) → Countdown | null
+countdownsService.getCountdowns() → [Countdown]
+```
+
+### Storage Schema
+```javascript
+{
+    countdowns_data: {
+        items: [Countdown]
+    }
+}
+```
+
+---
+
+## 🔔 Notification System
+
+### Purpose
+
+The notification system provides a shared, account-scoped in-app tray and service API for current and future modules. Notifications update subscribers immediately, persist in local storage, and scheduled notifications are checked at app startup and every 15 seconds while the app is open.
+
+### Notification Data Model
+```javascript
+{
+    id: string,
+    title: string,
+    message: string,
+    type: 'success' | 'reminder' | 'info',
+    source: string,
+    sourceId: string | null,
+    icon: string | null,
+    dedupeKey: string | null,
+    createdAt: ISO8601,
+    read: boolean
+}
+```
+
+### Reusable API
+```javascript
+notificationService.notify({ title, message, type, source, sourceId, icon, dedupeKey }) → Notification | null
+notificationService.schedule({ scheduleId, runAt, expiresAt, title, message, type, source, sourceId, icon, dedupeKey }) → boolean
+notificationService.cancelScheduled(scheduleId) → boolean
+notificationService.getNotifications({ unreadOnly }) → [Notification]
+notificationService.getState() → { notifications, unreadCount }
+notificationService.markRead(id) → boolean
+notificationService.markAllRead() → boolean
+notificationService.clearAll() → boolean
+notificationService.subscribe(listener) → unsubscribe
+notificationService.start() / stop()
+```
+
+`dedupeKey` prevents repeated notifications for the same event. Scheduled jobs persist with notifications, can expire before delivery, and are removed when their source event is deleted or rescheduled. The tray supports one-item read, mark-all-read, and clear-all actions; clearing history does not cancel pending jobs.
+
+Module notifications use the actual goal, Wishlist item, or countdown title as the tray headline; the detail line describes what happened. Previously stored generic module headlines are migrated to the source name when notification data loads.
+
+### Built-in Triggers
+
+✅ **Finance Goals** - Notify when balance-based goal progress crosses 100%; unchanged saves do not repeat the notification
+✅ **Wishlist Completion** - Notify after an item is successfully marked complete; reopening it does not notify
+✅ **Countdown Reminder** - Notify when the event is within one day; events scheduled less than a day away notify immediately
+✅ **Countdown End** - Notify at the target time; pending jobs are rescheduled on edits and canceled on deletion
+
+### Storage Schema
+```javascript
+{
+    notifications_data: {
+        notifications: [Notification],
+        scheduled: [ScheduledNotification]
+    }
+}
+```
+
+---
+
+## 🎴 Gacha Character Registry
+
+### Purpose
+
+The Gacha section contains a character registry for Genshin Impact and Zenless Zone Zero. It keeps a separate owned-character roster and character wishlist; wanted-character dates run as independent live countdowns and do not use the general Countdowns module.
+
+### Structure
+```
+src/modules/gacha/
+├── gachaData.js          # Game catalogs and default artwork URL resolvers
+├── gachaService.js       # Account-scoped roster and target persistence
+├── GachaComponent.js     # Registry, art editor, wishlist, and target timers
+└── gachaModule.js        # Gacha category registration
+```
+
+### Character Data
+```javascript
+{
+    id: string,
+    game: 'genshin' | 'zzz',
+    characterId: string,
+    name: string,
+    imageUrl: string,     // Optional custom URL or uploaded image data URL
+    mediaPosition: string, // Normalized crop point, e.g. '50% 50%'
+    mediaScale: number,    // Zoom factor from 1 to 2.5; defaults to 1.5
+    note: string,
+    addedAt: ISO8601,
+    updatedAt?: ISO8601
+}
+```
+
+Wishlist targets contain the same game/character/art fields with `targetAt: ISO8601 | null` and `createdAt`/`updatedAt` timestamps. The target timer counts down locally in the module and is independent of `countdowns_data` and its notification schedules.
+
+### Features Implemented
+
+✅ **Gacha Dashboard Category** - Separate full-width group and decorative Gacha divider
+✅ **Two Game Catalogs** - Select from bundled Genshin Impact and Zenless Zone Zero character lists, including the latest Genshin entries Vesna and Vodyanitsa
+✅ **Automatic Character Artwork** - Genshin portraits resolve through Enka UI assets; ZZZ portraits use the ZZZdle-Assets portrait set
+✅ **Custom Artwork** - Replace automatic artwork with an image URL or local image upload; reset to game artwork at any time
+✅ **Artwork Framing** - Drag to pan and use the shared 1×–2.5× scale slider; saved framing carries from the wishlist into the registry
+✅ **Owned Registry** - Add, edit, search, filter by game, and remove characters
+✅ **Character Wishlist** - Separate target list with optional notes and dates
+✅ **Independent Target Countdown** - Days, hours, minutes, and seconds for each wishlist date; “Got them” moves the target into the registry
+✅ **Image Fallback** - If remote artwork is unavailable, display a character-initial placeholder while retaining the custom-image controls
+✅ **Account Storage** - Roster and wishlist targets use the active account namespace
+✅ **Responsive Workspace** - Fixed-height scrolling workspace with responsive character cards and editor
+
+### GachaService API
+```javascript
+gachaService.addCharacter(input) → Character | null
+gachaService.updateCharacter(id, updates) → Character | null
+gachaService.removeCharacter(id) → boolean
+gachaService.addTarget(input) → Target | null
+gachaService.updateTarget(id, updates) → Target | null
+gachaService.removeTarget(id) → boolean
+gachaService.moveTargetToRoster(id) → boolean
+gachaService.getRoster() → [Character]
+gachaService.getTargets() → [Target]
+```
+
+### Storage Schema
+```javascript
+{
+    gacha_registry_data: {
+        roster: [Character],
+        targets: [Target]
+    }
+}
+```
+
+Character artwork is loaded from Enka’s public Genshin UI assets and the community-maintained `Gaiiiaaa-GH/ZZZdle-Assets` ZZZ portrait files; the app stores only custom overrides. The game artwork remains the property of its respective rights holders. Remote-image failures use the initials fallback.
+
+---
+
 ## 🎨 Theme System
 
 Themes are applied through shared CSS variables on `document.documentElement`, so the dashboard, module cards, modals, forms, buttons, Finance, Wishlist, and Settings all change together. The selected theme is persisted through account-scoped `theme_settings` data.
 
 Wishlist uses the shared animation language from `src/styles/animations.css`: fixed-size cards and history rows use a short staggered entrance, tabs use a restrained hover transition, crop form panels fade without moving, detail panels use a modal slide, and all overlays use the coordinated `fadeOut`/`modalSlideOut` close pair. Reduced-motion preferences disable these effects through the global animation rule.
 
-Wishlist and Bookmarks media editors share these crop interaction rules: the editor frame has a fixed 220px height and a constrained grid row; preview images are scaled to provide pan room; pointer deltas move the image from its grabbed point at 1:1 speed until a crop boundary is reached. `mediaPosition` stores the normalized crop point and is applied to editor previews and catalogue/detail media. History thumbnails remain unscaled.
+Wishlist, Bookmarks, Countdowns, and Gacha use the shared `src/utilities/mediaUtils.js` editor behavior. Editor previews are fixed frames; dragging pans from the point grabbed, while a shared zoom slider resizes media from 1× to 2.5× in 0.05 increments. At the 1.5× default, drag movement preserves the prior 1:1 feel. `mediaPosition` stores the normalized crop point and `mediaScale` stores zoom; both are applied in editors and module artwork, including featured and hover-loaded media. Older records without `mediaScale` retain their original appearance through a 1.5× default. History thumbnails remain unscaled.
 
 All module scroll regions keep wheel and touch scrolling available without visible scrollbar chrome. This prevents a native scrollbar from flashing during Wishlist section changes or shifting the catalogue layout when content becomes scrollable.
 
@@ -415,6 +631,7 @@ src/modules/bookmarks/
     mediaUrl: string,
     mediaType: 'image' | 'gif' | 'video',
     mediaPosition: string,      // Normalized crop point, e.g. '50% 50%'
+    mediaScale: number,         // Zoom factor from 1 to 2.5; defaults to 1.5
     description: string,
     createdAt: ISO8601,
     updatedAt: ISO8601
@@ -428,7 +645,7 @@ src/modules/bookmarks/
 ✅ **Bookmark Links** - Required URL with an open-in-new-tab detail action  
 ✅ **Descriptions** - Optional explanatory text shown on cards and detail views  
 ✅ **Media URLs and Uploads** - Images, GIFs, and videos from URLs or local files  
-✅ **Media Positioning** - Drag uploaded or URL-based media from the point grabbed; movement follows the pointer 1:1 and is saved as a normalized crop point  
+✅ **Media Positioning and Zoom** - Drag uploaded or URL-based media from the point grabbed, resize it from 1× to 2.5×, and persist both settings
 ✅ **Fresh Media Previews** - Add/Edit forms clear stale drafts and refresh the preview when media URL/type changes  
 ✅ **Hover Playback** - GIFs and videos load/play only on hover or keyboard focus  
 ✅ **Add, Edit, and Delete** - Full bookmark lifecycle with confirmation before deletion  
@@ -725,7 +942,7 @@ No testing framework currently implemented. Recommended:
 ✅ Wishlist image/GIF/video media renders in catalogue, detail, and compact history views  
 ✅ GIFs and videos load/play only on hover or keyboard focus and stop when leaving  
 ✅ Local media upload converts files to persistent data URLs  
-✅ Wishlist uploaded and URL-based media previews load, can be dragged from the grabbed point at 1:1 mouse speed, and persist `mediaPosition` across refresh  
+✅ Wishlist, Bookmarks, Countdowns, and Gacha previews upload/load, pan and zoom, and restore `mediaPosition` plus `mediaScale` after reopening
 ✅ Crop drags remain aligned while form panels fade in; 220px crop frames do not resize to intrinsic image dimensions  
 ✅ Wishlist form reopening starts with a clean draft and does not override saved item media or crop values  
 ✅ Wishlist storage write failures roll back in-memory changes and report an error; confirmed catalogue deletion records history  
@@ -735,9 +952,12 @@ No testing framework currently implemented. Recommended:
 ✅ Wishlist section changes keep the body stable and do not flash visible scrollbars  
 ✅ Wishlist and Bookmarks reserve stable responsive body viewports across their library/history sections  
 ✅ Bookmarks module registers beside Finance and Wishlist without changing their data  
-✅ Bookmarks add/edit flows save links, descriptions, uploaded or URL-based media, and pointer-following crop positions across refresh  
+✅ Bookmarks add/edit flows save links, descriptions, uploaded or URL-based media, crop positions, and zoom scale across refresh
 ✅ Bookmarks detail, edit, delete, history, media, animations, and mobile layout work live  
 ✅ Bookmarks uses a distinct featured-shelf, quick-access, and timeline composition rather than Wishlist's catalogue structure  
+✅ Legacy Wishlist, Bookmarks, Countdown, and Gacha records without `mediaScale` retain their existing crop and open at the 1.5× compatibility default
+✅ Creating an account copies all four module datasets and existing notifications; test-account media edits stay isolated from Guest data
+✅ Account compatibility fixture was removed and the full pre-test localStorage snapshot was restored
 ✅ Bookmarks Library and History keep stable body dimensions without visible native scrollbar flashes  
 ✅ Fresh acceptance pass migrated representative Finance, Wishlist, and Bookmarks data into a new account without loss  
 ✅ Fresh acceptance pass opened all modules, verified stable section heights, mobile viewport bounds, theme switching, and Settings close animation  

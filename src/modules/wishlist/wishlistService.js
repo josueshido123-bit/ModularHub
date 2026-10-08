@@ -1,5 +1,7 @@
 import { storageService } from '../../services/storageService.js';
 import { generateId } from '../../utilities/uiUtils.js';
+import { notificationService } from '../../services/notificationService.js';
+import { DEFAULT_MEDIA_SCALE, normalizeMediaPosition, normalizeMediaScale } from '../../utilities/mediaUtils.js';
 
 class WishlistService {
     constructor() {
@@ -28,7 +30,7 @@ class WishlistService {
     }
 
     addItem(input) {
-        const item = { id: generateId(), name: input.name.trim(), mediaUrl: input.mediaUrl || '', mediaType: input.mediaType || 'image', mediaPosition: input.mediaPosition || '50% 50%', price: Number(input.price) > 0 ? Number(input.price) : null, notes: input.notes || '', link: input.link || '', targetDate: input.targetDate || null, status: 'active', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+        const item = { id: generateId(), name: input.name.trim(), mediaUrl: input.mediaUrl || '', mediaType: input.mediaType || 'image', mediaPosition: normalizeMediaPosition(input.mediaPosition), mediaScale: normalizeMediaScale(input.mediaScale ?? DEFAULT_MEDIA_SCALE), price: Number(input.price) > 0 ? Number(input.price) : null, notes: input.notes || '', link: input.link || '', targetDate: input.targetDate || null, status: 'active', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
         this.data.items.unshift(item);
         this.record(item.id, 'added', this.mediaDetails(item));
         return this.saveData() ? item : null;
@@ -37,7 +39,7 @@ class WishlistService {
     updateItem(itemId, updates) {
         const item = this.getItem(itemId);
         if (!item) return null;
-        Object.assign(item, updates, { updatedAt: new Date().toISOString() });
+        Object.assign(item, updates, { mediaPosition: normalizeMediaPosition(updates.mediaPosition ?? item.mediaPosition), mediaScale: normalizeMediaScale(updates.mediaScale ?? item.mediaScale), updatedAt: new Date().toISOString() });
         this.record(item.id, 'edited', this.mediaDetails(item));
         return this.saveData() ? item : null;
     }
@@ -48,7 +50,18 @@ class WishlistService {
         item.status = item.status === 'completed' ? 'active' : 'completed';
         item.updatedAt = new Date().toISOString();
         this.record(item.id, item.status === 'completed' ? 'completed' : 'reopened', this.mediaDetails(item));
-        return this.saveData() ? item : null;
+        if (!this.saveData()) return null;
+        if (item.status === 'completed') {
+            notificationService.notify({
+                title: item.name,
+                message: 'Wishlist item marked complete.',
+                type: 'success',
+                source: 'wishlist',
+                sourceId: item.id,
+                dedupeKey: `wishlist-item:${item.id}:completed:${generateId()}`
+            });
+        }
+        return item;
     }
 
     removeItem(itemId) {

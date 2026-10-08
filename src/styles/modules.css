@@ -217,6 +217,10 @@
 .wishlist-media-editor:active { cursor: grabbing; }
 .wishlist-media-editor img, .wishlist-media-editor video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 .wishlist-upload-empty { padding: var(--space-lg); color: var(--color-text-tertiary); text-align: center; font-size: var(--font-size-sm); }
+.media-scale-control { display: flex; flex-direction: column; gap: var(--space-xs); width: 100%; margin: var(--space-sm) 0 var(--space-md); }
+.media-scale-heading { display: flex; align-items: center; justify-content: space-between; color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.media-scale-value { color: var(--color-text); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.media-scale-control input[type="range"] { width: 100%; padding: 0; background: transparent; border: 0; accent-color: var(--color-primary); cursor: ew-resize; }
 .wishlist-detail-panel { display: grid; grid-template-columns: minmax(220px, .9fr) 1.1fr; gap: var(--space-xl); }
 .wishlist-detail-close, .wishlist-form-close { position: absolute; top: var(--space-md); right: var(--space-md); z-index: 1; border: 0; background: transparent; color: var(--color-text-tertiary); font-size: var(--font-size-2xl); cursor: pointer; }
 .wishlist-detail-media { min-height: 280px; overflow: hidden; border-radius: var(--radius-md); background: var(--color-bg-tertiary); }
@@ -228,6 +232,180 @@
 .wishlist-history h3 { margin-bottom: var(--space-sm); }
 .wishlist-history-row { display: grid; grid-template-columns: 56px 90px 1fr auto; gap: var(--space-md); align-items: center; padding: var(--space-md); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
 .wishlist-history-row time { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+
+/* Countdowns Module */
+.countdowns-module-content { display: flex; flex-direction: column; gap: var(--space-lg); width: 100%; height: clamp(28rem, 58vh, 38rem); overflow-y: auto; overscroll-behavior: contain; }
+.countdowns-toolbar, .countdowns-list-toolbar, .countdowns-form-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
+.countdowns-toolbar h3 { margin-top: var(--space-xs); font-size: var(--font-size-xl); }
+.countdowns-eyebrow, .countdowns-featured-label { color: var(--color-primary-light); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: .08em; }
+.countdowns-featured { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-xl); min-height: 190px; padding: var(--space-xl); overflow: hidden; background: linear-gradient(115deg, var(--color-bg-secondary), color-mix(in srgb, var(--color-primary) 16%, var(--color-bg-secondary))); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.countdowns-featured.has-media { grid-template-columns: minmax(100px, .55fr) minmax(0, 1fr) minmax(250px, auto); }
+.countdowns-featured-media { width: 100%; height: 150px; overflow: hidden; background: var(--color-bg-tertiary); border-radius: var(--radius-sm); }
+.countdowns-featured-media img, .countdowns-featured-media video, .countdowns-featured-media .countdowns-media-frame { display: block; width: 100%; height: 100%; object-fit: cover; }
+.countdowns-featured-copy h2 { margin: var(--space-sm) 0; font-size: var(--font-size-2xl); overflow-wrap: anywhere; }
+.countdowns-featured-copy time, .countdowns-featured-empty p { color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
+.countdowns-featured-copy p { margin-top: var(--space-sm); max-width: 42rem; overflow-wrap: anywhere; }
+.countdowns-featured-clock { min-width: 250px; }
+.countdowns-featured-empty { grid-column: 1 / -1; }
+.countdowns-featured-empty h2 { margin: var(--space-sm) 0; font-size: var(--font-size-xl); }
+.countdowns-timer { min-width: 0; }
+.countdowns-timer-state { display: block; margin-bottom: var(--space-sm); color: var(--color-primary-light); font-size: 0.65rem; font-weight: var(--font-weight-semibold); letter-spacing: .1em; }
+.countdowns-timer.is-expired .countdowns-timer-state { color: var(--color-text-tertiary); }
+.countdowns-units { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-sm); }
+.countdowns-units > div { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: var(--space-sm) var(--space-xs); background: color-mix(in srgb, var(--color-bg) 62%, transparent); border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent); border-radius: var(--radius-sm); }
+.countdowns-units strong { font-family: var(--font-mono); font-size: clamp(1rem, 2.8vw, 1.6rem); font-weight: var(--font-weight-medium); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.countdowns-units span { margin-top: 2px; color: var(--color-text-tertiary); font-size: 0.65rem; text-transform: uppercase; }
+.countdowns-filters { display: flex; align-items: center; gap: var(--space-md); }
+.countdowns-filter { display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) 0; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--color-text-tertiary); cursor: pointer; transition: color var(--transition-fast), border-color var(--transition-fast); }
+.countdowns-filter:hover, .countdowns-filter.active { color: var(--color-primary-light); }
+.countdowns-filter.active { border-bottom-color: var(--color-primary); }
+.countdowns-filter span { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.countdowns-list-caption { color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
+.countdowns-list { display: flex; flex-direction: column; gap: var(--space-sm); overflow-y: auto; padding: 2px; }
+.countdowns-card { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(210px, .85fr) auto; align-items: center; gap: var(--space-lg); min-height: 112px; padding: var(--space-md) var(--space-lg); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); animation: wishlistItemEnter 260ms ease-out both; }
+.countdowns-card.has-media { grid-template-columns: 72px minmax(120px, 1fr) minmax(210px, .85fr) auto; }
+.countdowns-card-media { width: 72px; height: 72px; overflow: hidden; background: var(--color-bg-tertiary); border-radius: var(--radius-sm); }
+.countdowns-card-media img, .countdowns-card-media video, .countdowns-card-media .countdowns-media-frame { display: block; width: 100%; height: 100%; object-fit: cover; }
+.countdowns-card.is-past { opacity: .72; }
+.countdowns-card-copy { min-width: 0; }
+.countdowns-card-date { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.countdowns-card-copy h3 { margin: var(--space-xs) 0; font-size: var(--font-size-base); overflow-wrap: anywhere; }
+.countdowns-card-copy p { overflow: hidden; color: var(--color-text-tertiary); font-size: var(--font-size-sm); text-overflow: ellipsis; white-space: nowrap; }
+.countdowns-card-actions { display: flex; gap: var(--space-sm); }
+.countdowns-card-timer .countdowns-units { gap: 3px; }
+.countdowns-card-timer .countdowns-units strong { font-size: var(--font-size-base); }
+.countdowns-card-timer .countdowns-units span { font-size: .55rem; }
+.countdowns-card-timer .countdowns-timer-state { margin-bottom: 3px; font-size: .58rem; }
+.countdowns-media-frame { display: grid; place-items: center; overflow: hidden; color: var(--color-primary-light); font-size: var(--font-size-sm); background: linear-gradient(135deg, var(--color-bg-tertiary), var(--color-bg)); cursor: pointer; }
+.countdowns-hover-media { transition: color var(--transition-fast), background-color var(--transition-fast); }
+.countdowns-hover-media.is-playing { color: transparent; }
+.countdowns-hover-media img, .countdowns-hover-media video { width: 100%; height: 100%; object-fit: cover; }
+.countdowns-empty { padding: var(--space-xl); color: var(--color-text-tertiary); text-align: center; }
+.countdowns-form-overlay { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: var(--space-lg); background: rgba(0, 0, 0, .72); backdrop-filter: blur(4px); animation: fadeIn 180ms ease-out; }
+.countdowns-form-panel { width: min(520px, 94vw); max-height: 90vh; overflow-y: auto; padding: var(--space-xl); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); animation: modalSlideIn 220ms ease; }
+.countdowns-form-heading { margin-bottom: var(--space-lg); align-items: flex-start; }
+.countdowns-form-heading h2 { margin-top: var(--space-xs); font-size: var(--font-size-xl); }
+.countdowns-form-close { padding: 0 var(--space-xs); border: 0; background: transparent; color: var(--color-text-tertiary); font-size: var(--font-size-2xl); cursor: pointer; }
+.countdowns-form { display: flex; flex-direction: column; gap: var(--space-md); }
+.countdowns-field { display: flex; flex-direction: column; gap: var(--space-xs); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
+.countdowns-field > span { color: var(--color-text-tertiary); font-size: var(--font-size-xs); font-weight: var(--font-weight-normal); }
+.countdowns-field input, .countdowns-field textarea { width: 100%; font-weight: var(--font-weight-normal); }
+.countdowns-field textarea { resize: vertical; }
+.countdowns-media-fields { display: flex; flex-direction: column; gap: var(--space-sm); }
+.countdowns-media-label { font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
+.countdowns-media-label > span { color: var(--color-text-tertiary); font-size: var(--font-size-xs); font-weight: var(--font-weight-normal); }
+.countdowns-file-label { position: relative; width: fit-content; }
+.countdowns-file-label input { display: none; }
+.countdowns-media-editor { position: relative; display: grid; grid-template-rows: minmax(0, 1fr); place-items: center; width: 100%; height: 190px; overflow: hidden; cursor: grab; background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: var(--radius-md); touch-action: none; user-select: none; }
+.countdowns-media-editor:active { cursor: grabbing; }
+.countdowns-media-editor img, .countdowns-media-editor video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.countdowns-upload-empty { padding: var(--space-lg); color: var(--color-text-tertiary); text-align: center; font-size: var(--font-size-sm); }
+.countdowns-media-inputs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, .5fr); gap: var(--space-md); }
+.countdowns-form-actions { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-sm); }
+
+@media (max-width: 640px) {
+    .countdowns-featured { grid-template-columns: 1fr; gap: var(--space-lg); padding: var(--space-lg); }
+    .countdowns-featured.has-media { grid-template-columns: 72px minmax(0, 1fr); }
+    .countdowns-featured-media { grid-column: 1; grid-row: 1; height: 72px; }
+    .countdowns-featured-copy { grid-column: 2; grid-row: 1; min-width: 0; }
+    .countdowns-featured-clock { grid-column: 1 / -1; }
+    .countdowns-featured-clock { min-width: 0; }
+    .countdowns-card { grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-md); padding: var(--space-md); }
+    .countdowns-card.has-media { grid-template-columns: 60px minmax(0, 1fr); }
+    .countdowns-card-media { grid-column: 1; grid-row: 1; width: 60px; height: 60px; }
+    .countdowns-card.has-media .countdowns-card-copy { grid-column: 2; grid-row: 1; }
+    .countdowns-card.has-media .countdowns-card-timer { grid-column: 1 / -1; grid-row: 2; }
+    .countdowns-card.has-media .countdowns-card-actions { grid-column: 2; grid-row: 3; justify-content: flex-end; }
+    .countdowns-card-timer { grid-column: 1 / -1; grid-row: 2; }
+    .countdowns-card-actions { grid-column: 2; grid-row: 1; }
+    .countdowns-card-actions .btn { padding-inline: var(--space-sm); }
+    .countdowns-list-toolbar { align-items: flex-end; }
+    .countdowns-filters { gap: var(--space-sm); }
+    .countdowns-filter { font-size: var(--font-size-sm); }
+    .countdowns-media-inputs { grid-template-columns: 1fr; }
+}
+
+/* Gacha Character Registry */
+.gacha-module-content { display: flex; flex-direction: column; gap: var(--space-lg); width: 100%; height: clamp(28rem, 58vh, 38rem); overflow-y: auto; overscroll-behavior: contain; }
+.gacha-toolbar, .gacha-controls, .gacha-tabs, .gacha-game-filters, .gacha-list-heading, .gacha-card-actions, .gacha-form-header, .gacha-form-actions { display: flex; align-items: center; }
+.gacha-toolbar, .gacha-controls, .gacha-list-heading, .gacha-form-header { justify-content: space-between; gap: var(--space-md); }
+.gacha-toolbar h3 { margin: var(--space-xs) 0; font-size: var(--font-size-xl); }
+.gacha-toolbar p { margin: 0; color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
+.gacha-eyebrow { color: var(--color-primary-light); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.gacha-controls { flex-wrap: wrap; border-bottom: 1px solid var(--color-border); }
+.gacha-tabs { gap: var(--space-lg); }
+.gacha-tab { display: inline-flex; align-items: center; gap: var(--space-sm); padding: var(--space-sm) 0; color: var(--color-text-tertiary); background: transparent; border: 0; border-bottom: 2px solid transparent; cursor: pointer; transition: color var(--transition-fast), border-color var(--transition-fast); }
+.gacha-tab:hover, .gacha-tab.active { color: var(--color-primary-light); }
+.gacha-tab.active { border-bottom-color: var(--color-primary); }
+.gacha-tab span { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.gacha-search { width: min(240px, 100%); }
+.gacha-search-input { width: 100%; }
+.gacha-game-filters { gap: var(--space-sm); flex-wrap: wrap; }
+.gacha-game-filter { padding: var(--space-xs) var(--space-md); color: var(--color-text-tertiary); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 999px; cursor: pointer; font: inherit; font-size: var(--font-size-xs); transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast); }
+.gacha-game-filter:hover, .gacha-game-filter.active { color: var(--color-text); border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 16%, var(--color-bg-secondary)); }
+.gacha-list-heading { justify-content: space-between; color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.gacha-character-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--space-md); align-content: start; padding: 2px; }
+.gacha-character-card { display: grid; grid-template-rows: 164px minmax(84px, 1fr) auto; min-width: 0; min-height: 300px; overflow: hidden; background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); animation: wishlistItemEnter 260ms ease-out both; }
+.gacha-card-art { position: relative; display: grid; place-items: center; min-width: 0; overflow: hidden; background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--color-primary) 32%, var(--color-bg-tertiary)), var(--color-bg-tertiary) 72%); }
+.gacha-art-image { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; transition: transform var(--transition-slow); }
+.gacha-character-card:hover .gacha-art-image { transform: scale(1.035); }
+.gacha-art-fallback { display: grid; place-items: center; width: 100%; height: 100%; color: var(--color-text); background: linear-gradient(145deg, var(--color-bg-tertiary), color-mix(in srgb, var(--color-primary) 24%, var(--color-bg-secondary))); font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); }
+.gacha-card-copy { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: var(--space-xs); padding: var(--space-md); }
+.gacha-game-label { display: inline-flex; align-items: center; min-height: 20px; padding: 2px var(--space-sm); color: var(--color-text-secondary); background: var(--color-bg-tertiary); border-radius: 999px; font-size: 0.65rem; line-height: 1.2; }
+.gacha-game-label.game-zzz { color: var(--color-success); }
+.gacha-card-copy h4 { margin: var(--space-xs) 0 0; font-size: var(--font-size-base); overflow-wrap: anywhere; }
+.gacha-card-copy p { display: -webkit-box; width: 100%; overflow: hidden; margin: 0; color: var(--color-text-tertiary); font-size: var(--font-size-xs); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.gacha-card-note { opacity: .85; }
+.gacha-card-actions { gap: var(--space-sm); padding: 0 var(--space-md) var(--space-md); }
+.gacha-card-actions .btn { flex: 1; min-width: 0; padding-inline: var(--space-sm); }
+.gacha-target-card { grid-template-rows: 164px minmax(150px, 1fr) auto; }
+.gacha-target-timer { width: 100%; margin-top: auto; padding-top: var(--space-sm); }
+.gacha-timer-label { display: block; margin-bottom: var(--space-xs); color: var(--color-primary-light); font-size: .62rem; font-weight: var(--font-weight-semibold); }
+.gacha-target-timer.is-ended .gacha-timer-label { color: var(--color-text-tertiary); }
+.gacha-timer-units { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+.gacha-timer-units > span { display: flex; min-width: 0; flex-direction: column; align-items: center; padding: var(--space-xs) 2px; background: color-mix(in srgb, var(--color-bg) 55%, transparent); border: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent); border-radius: var(--radius-sm); }
+.gacha-timer-units strong { font-family: var(--font-mono); font-size: var(--font-size-sm); font-variant-numeric: tabular-nums; }
+.gacha-timer-units small { color: var(--color-text-tertiary); font-size: .58rem; text-transform: uppercase; }
+.gacha-no-date { margin-top: auto !important; padding-top: var(--space-sm); }
+.gacha-empty { grid-column: 1 / -1; padding: var(--space-2xl); color: var(--color-text-tertiary); text-align: center; }
+.gacha-form-overlay { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: var(--space-lg); background: rgba(0, 0, 0, .74); backdrop-filter: blur(4px); animation: fadeIn 180ms ease-out; }
+.gacha-form-panel { display: flex; width: min(620px, 94vw); max-height: 90vh; flex-direction: column; overflow-y: auto; padding: var(--space-xl); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); animation: modalSlideIn 220ms ease; }
+.gacha-form-header { align-items: flex-start; margin-bottom: var(--space-lg); }
+.gacha-form-header h2 { margin: var(--space-xs) 0 0; font-size: var(--font-size-xl); }
+.gacha-form-close { padding: 0 var(--space-xs); color: var(--color-text-tertiary); background: transparent; border: 0; cursor: pointer; font-size: var(--font-size-2xl); }
+.gacha-form { display: flex; flex-direction: column; gap: var(--space-md); }
+.gacha-field { display: flex; min-width: 0; flex-direction: column; gap: var(--space-xs); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
+.gacha-field > span { color: var(--color-text-tertiary); font-size: var(--font-size-xs); font-weight: var(--font-weight-normal); }
+.gacha-field input, .gacha-field select, .gacha-field textarea { width: 100%; font-weight: var(--font-weight-normal); }
+.gacha-field textarea { resize: vertical; }
+.gacha-preview-wrap { display: flex; flex-direction: column; gap: var(--space-xs); color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.gacha-form-preview { height: 210px; overflow: hidden; cursor: grab; touch-action: none; user-select: none; background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.gacha-form-preview:active { cursor: grabbing; }
+.gacha-form-preview .gacha-art-image, .gacha-form-preview .gacha-art-fallback { object-fit: contain; }
+.gacha-form-preview .gacha-art-image { pointer-events: none; }
+.gacha-art-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: end; gap: var(--space-sm); }
+.gacha-upload-label { position: relative; white-space: nowrap; }
+.gacha-upload-label input { display: none; }
+.gacha-reset-art { white-space: nowrap; }
+.gacha-form-actions { justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-sm); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 640px) {
+    .gacha-toolbar { align-items: flex-start; }
+    .gacha-toolbar .btn { flex-shrink: 0; padding-inline: var(--space-sm); }
+    .gacha-controls { align-items: stretch; flex-direction: column; }
+    .gacha-tabs { gap: var(--space-md); }
+    .gacha-search { width: 100%; }
+    .gacha-character-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .gacha-character-card { grid-template-rows: 140px minmax(84px, 1fr) auto; min-height: 280px; }
+    .gacha-target-card { grid-template-rows: 140px minmax(150px, 1fr) auto; }
+    .gacha-art-controls { grid-template-columns: 1fr 1fr; }
+    .gacha-art-controls .gacha-field { grid-column: 1 / -1; }
+}
+
+@media (max-width: 380px) {
+    .gacha-character-grid { grid-template-columns: 1fr; }
+}
 
 /* Bookmarks Module */
 .bookmarks-toolbar, .bookmarks-tabs, .bookmarks-summary, .bookmarks-card-actions { display: flex; align-items: center; gap: var(--space-md); }

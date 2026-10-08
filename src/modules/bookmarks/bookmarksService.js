@@ -1,5 +1,6 @@
 import { storageService } from '../../services/storageService.js';
 import { generateId } from '../../utilities/uiUtils.js';
+import { DEFAULT_MEDIA_SCALE, normalizeMediaPosition, normalizeMediaScale } from '../../utilities/mediaUtils.js';
 
 class BookmarksService {
     constructor() {
@@ -18,7 +19,7 @@ class BookmarksService {
     record(itemId, action, details) { this.data.history.unshift({ id: generateId(), itemId, action, details, date: new Date().toISOString() }); }
 
     addItem(input) {
-        const item = { id: generateId(), name: input.name.trim(), url: input.url.trim(), mediaUrl: input.mediaUrl || '', mediaType: input.mediaType || 'image', mediaPosition: input.mediaPosition || '50% 50%', description: input.description || '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+        const item = { id: generateId(), name: input.name.trim(), url: input.url.trim(), mediaUrl: input.mediaUrl || '', mediaType: input.mediaType || 'image', mediaPosition: normalizeMediaPosition(input.mediaPosition), mediaScale: normalizeMediaScale(input.mediaScale ?? DEFAULT_MEDIA_SCALE), description: input.description || '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
         this.data.items.unshift(item);
         this.record(item.id, 'added', this.mediaDetails(item));
         this.saveData();
@@ -28,7 +29,7 @@ class BookmarksService {
     updateItem(itemId, updates) {
         const item = this.getItem(itemId);
         if (!item) return null;
-        Object.assign(item, updates, { updatedAt: new Date().toISOString() });
+        Object.assign(item, updates, { mediaPosition: normalizeMediaPosition(updates.mediaPosition ?? item.mediaPosition), mediaScale: normalizeMediaScale(updates.mediaScale ?? item.mediaScale), updatedAt: new Date().toISOString() });
         this.record(item.id, 'edited', this.mediaDetails(item));
         this.saveData();
         return item;

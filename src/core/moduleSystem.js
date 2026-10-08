@@ -82,6 +82,19 @@ class ModuleSystem {
         card.id = `module-${instance.id}`;
         card.setAttribute('data-module-id', instance.id);
 
+        let targetContainer = this.moduleContainer;
+        if (definition.category === 'gacha') {
+            let categorySection = this.moduleContainer.querySelector('[data-module-category="gacha"]');
+            if (!categorySection) {
+                categorySection = document.createElement('section');
+                categorySection.className = 'module-category-section';
+                categorySection.dataset.moduleCategory = 'gacha';
+                categorySection.innerHTML = '<div class="module-category-heading"><span>Gacha</span></div><div class="module-category-grid"></div>';
+                this.moduleContainer.appendChild(categorySection);
+            }
+            targetContainer = categorySection.querySelector('.module-category-grid');
+        }
+
         // Module card preview content
         card.innerHTML = `
             <div class="module-preview-content">
@@ -95,7 +108,7 @@ class ModuleSystem {
         card.addEventListener('click', () => this.openModule(instance));
         
         instance.element = card;
-        this.moduleContainer.appendChild(card);
+        targetContainer.appendChild(card);
 
         // Trigger animation
         requestAnimationFrame(() => {

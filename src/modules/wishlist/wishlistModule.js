@@ -7,7 +7,7 @@ export function registerWishlistModule() {
         description: 'Collect and track things you want',
         category: 'planning',
         version: '1.0.0',
-        icon: '✦',
+        icon: '🛍️',
         component: WishlistComponent,
         defaultSize: { width: 2, height: 2 },
         state: { view: 'catalogue' }

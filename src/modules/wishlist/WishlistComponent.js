@@ -1,6 +1,7 @@
 import { wishlistService } from './wishlistService.js';
 import { financeService } from '../finance/financeService.js';
 import { formatCurrency, formatDate, showToast } from '../../utilities/uiUtils.js';
+import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform } from '../../utilities/mediaUtils.js';
 
 export class WishlistComponent {
     constructor(state = {}) {
@@ -37,32 +38,24 @@ export class WishlistComponent {
         const url = this.escape(item.mediaUrl);
         const isHoverMedia = item.mediaType === 'video' || item.mediaType === 'gif' || /\.gif(?:$|[?#])/i.test(item.mediaUrl);
         const position = this.escape(item.mediaPosition || '50% 50%');
-        if (isHoverMedia) return `<div class="wishlist-media-placeholder wishlist-hover-media ${size === 'history' ? 'history' : ''}" data-media-url="${url}" data-media-type="${item.mediaType === 'video' ? 'video' : 'gif'}" data-media-position="${position}" data-media-alt="${this.escape(item.name || '')}">${item.mediaType === 'video' ? '▶' : 'GIF'}</div>`;
-        return `<img src="${url}" alt="${this.escape(item.name || '')}" loading="lazy" style="${this.mediaStyle(position, size)}">`;
+        const scale = item.mediaScale ?? DEFAULT_MEDIA_SCALE;
+        if (isHoverMedia) return `<div class="wishlist-media-placeholder wishlist-hover-media ${size === 'history' ? 'history' : ''}" data-media-url="${url}" data-media-type="${item.mediaType === 'video' ? 'video' : 'gif'}" data-media-position="${position}" data-media-scale="${scale}" data-media-alt="${this.escape(item.name || '')}">${item.mediaType === 'video' ? '▶' : 'GIF'}</div>`;
+        return `<img src="${url}" alt="${this.escape(item.name || '')}" loading="lazy" style="${this.mediaStyle(position, size, scale)}">`;
     }
 
-    mediaStyle(position, size = 'card') {
-        const [xValue, yValue] = String(position || '50% 50%').split(/\s+/);
-        const parsePercent = value => {
-            const parsed = Number.parseFloat(value);
-            return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 50;
-        };
-        const transform = size === 'history' ? 'none' : this.mediaTransform(parsePercent(xValue), parsePercent(yValue));
-        return `object-position:50% 50%;transform:${transform};transform-origin:50% 50%`;
-    }
+    mediaStyle(position, size = 'card', scale = DEFAULT_MEDIA_SCALE) { return getMediaStyle(position, size, scale); }
 
-    mediaTransform(x, y) {
-        return `translate3d(${(x - 50) * 0.5}%, ${(y - 50) * 0.5}%, 0) scale(1.5)`;
-    }
+    mediaTransform(x, y, scale = DEFAULT_MEDIA_SCALE) { return getMediaTransform(`${x}% ${y}%`, scale); }
 
     renderEditorMedia(item) {
         const mediaUrl = this.mediaDraft.url || item?.mediaUrl || '';
         const mediaType = this.mediaDraft.type || item?.mediaType || 'image';
         const position = this.mediaDraft.position || item?.mediaPosition || '50% 50%';
+        const scale = this.mediaDraft.scale ?? item?.mediaScale ?? DEFAULT_MEDIA_SCALE;
         if (!mediaUrl) return '<div class="wishlist-upload-empty">Choose an image, GIF, or video to position it here</div>';
         const tag = mediaType === 'video' ? 'video' : 'img';
         const attributes = tag === 'video' ? 'muted playsinline' : `alt="${this.escape(item?.name || 'Wishlist media')}"`;
-        return `<${tag} src="${this.escape(mediaUrl)}" ${attributes} style="${this.mediaStyle(position, 'editor')}"></${tag}>`;
+        return `<${tag} src="${this.escape(mediaUrl)}" ${attributes} style="${this.mediaStyle(position, 'editor', scale)}"></${tag}>`;
     }
 
     renderForm() {
@@ -166,11 +159,13 @@ export class WishlistComponent {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = () => {
-            this.mediaDraft = { url: reader.result, type: file.type === 'video/mp4' || file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image', position: '50% 50%' };
+            this.mediaDraft = { url: reader.result, type: file.type === 'video/mp4' || file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image', position: '50% 50%', scale: DEFAULT_MEDIA_SCALE };
             const form = container.querySelector('.wishlist-form');
             form.querySelector('input[name="mediaUrl"]').value = this.mediaDraft.url;
             form.querySelector('select[name="mediaType"]').value = this.mediaDraft.type;
             form.querySelector('input[name="mediaPosition"]').value = this.mediaDraft.position;
+            form.querySelector('input[name="mediaScale"]').value = String(this.mediaDraft.scale);
+            form.querySelector('.media-scale-value').value = `${Math.round(this.mediaDraft.scale * 100)}%`;
             this.renderMediaEditor(container);
         };
         reader.readAsDataURL(file);
@@ -181,7 +176,8 @@ export class WishlistComponent {
         this.mediaDraft = {
             url: form.querySelector('input[name="mediaUrl"]').value.trim(),
             type: form.querySelector('select[name="mediaType"]').value,
-            position: form.querySelector('input[name="mediaPosition"]').value || '50% 50%'
+            position: form.querySelector('input[name="mediaPosition"]').value || '50% 50%',
+            scale: Number(form.querySelector('input[name="mediaScale"]')?.value) || DEFAULT_MEDIA_SCALE
         };
         this.renderMediaEditor(container);
     }
@@ -191,6 +187,7 @@ export class WishlistComponent {
         const editor = currentEditor.cloneNode(false);
         editor.removeAttribute('data-bound');
         editor.dataset.position = this.mediaDraft.position || '50% 50%';
+        editor.dataset.scale = String(this.mediaDraft.scale ?? DEFAULT_MEDIA_SCALE);
         editor.innerHTML = this.renderEditorMedia({ name: container.querySelector('.wishlist-form input[name="name"]').value });
         currentEditor.replaceWith(editor);
         this.setupMediaEditor(container);
@@ -198,31 +195,15 @@ export class WishlistComponent {
 
     setupMediaEditor(container) {
         const editor = container.querySelector('.wishlist-media-editor');
-        if (!editor || editor.dataset.bound === 'true' || !editor.querySelector('img, video')) return;
-        editor.dataset.bound = 'true';
-        editor.addEventListener('pointerdown', event => {
-            event.preventDefault();
-            try { editor.setPointerCapture(event.pointerId); } catch {}
-            const rect = editor.getBoundingClientRect();
-            const startX = event.clientX;
-            const startY = event.clientY;
-            const startPosition = container.querySelector('input[name="mediaPosition"]').value.split(/\s+/).map(value => {
-                const parsed = Number.parseFloat(value);
-                return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 50;
-            });
-            const move = moveEvent => {
-                const x = Math.max(0, Math.min(100, startPosition[0] + ((moveEvent.clientX - startX) / rect.width) * 200));
-                const y = Math.max(0, Math.min(100, startPosition[1] + ((moveEvent.clientY - startY) / rect.height) * 200));
-                const position = `${Math.round(x)}% ${Math.round(y)}%`;
-                editor.dataset.position = position;
-                editor.querySelector('img, video').style.transform = this.mediaTransform(x, y);
-                container.querySelector('input[name="mediaPosition"]').value = position;
-            };
-            const stop = () => { editor.removeEventListener('pointermove', move); editor.removeEventListener('pointerup', stop); editor.removeEventListener('pointercancel', stop); };
-            editor.addEventListener('pointermove', move);
-            editor.addEventListener('pointerup', stop, { once: true });
-            editor.addEventListener('pointercancel', stop, { once: true });
-        });
+        if (!editor) return;
+        const item = this.state.editingId ? wishlistService.getItem(this.state.editingId) : null;
+        const controls = ensureMediaScaleControl(container, editor, this.mediaDraft.scale ?? item?.mediaScale ?? DEFAULT_MEDIA_SCALE);
+        if (!controls) return;
+        bindMediaEditor(editor, controls.positionInput, controls.scaleInput, controls.scaleOutput);
+        if (controls.scaleInput.dataset.wishlistDraftBound !== 'true') {
+            controls.scaleInput.dataset.wishlistDraftBound = 'true';
+            controls.scaleInput.addEventListener('input', () => { this.mediaDraft.scale = Number(controls.scaleInput.value); });
+        }
     }
 
     closeOverlay(overlay) {
@@ -244,7 +225,7 @@ export class WishlistComponent {
         const media = document.createElement(placeholder.dataset.mediaType === 'video' ? 'video' : 'img');
         media.src = placeholder.dataset.mediaUrl;
         media.alt = placeholder.dataset.mediaAlt || '';
-        media.style.cssText = this.mediaStyle(placeholder.dataset.mediaPosition || '50% 50%', placeholder.classList.contains('history') ? 'history' : 'card');
+        media.style.cssText = this.mediaStyle(placeholder.dataset.mediaPosition || '50% 50%', placeholder.classList.contains('history') ? 'history' : 'card', placeholder.dataset.mediaScale ?? DEFAULT_MEDIA_SCALE);
         if (media.tagName === 'VIDEO') { media.muted = true; media.loop = true; media.autoplay = true; media.playsInline = true; media.play().catch(() => {}); }
         placeholder.replaceChildren(media);
         placeholder.classList.add('is-playing');

@@ -6,11 +6,13 @@
 
 import { storageService } from '../../services/storageService.js';
 import { generateId } from '../../utilities/uiUtils.js';
+import { notificationService } from '../../services/notificationService.js';
 
 export class FinanceService {
     constructor() {
         this.dataKey = 'finance_data';
         this.loadData();
+        this.goalCompletionState = this.getGoalCompletionState();
     }
 
     /**
@@ -36,7 +38,27 @@ export class FinanceService {
      * Save finance data to storage
      */
     saveData() {
-        storageService.save(this.dataKey, this.data);
+        if (!storageService.save(this.dataKey, this.data)) return false;
+        const nextState = this.getGoalCompletionState();
+        nextState.forEach((reached, goalId) => {
+            if (!reached || this.goalCompletionState.get(goalId) === true) return;
+            const goal = this.data.goals.find(item => item.id === goalId);
+            if (!goal) return;
+            notificationService.notify({
+                title: goal.name,
+                message: 'Finance savings goal reached.',
+                type: 'success',
+                source: 'finance',
+                sourceId: goalId,
+                dedupeKey: `finance-goal:${goalId}:${generateId()}`
+            });
+        });
+        this.goalCompletionState = nextState;
+        return true;
+    }
+
+    getGoalCompletionState() {
+        return new Map(this.data.goals.map(goal => [goal.id, this.getGoalProgress(goal.id) >= 100]));
     }
 
     /**

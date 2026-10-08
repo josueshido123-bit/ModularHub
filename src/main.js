@@ -7,7 +7,12 @@ import { moduleSystem } from './core/moduleSystem.js';
 import { registerFinanceModule } from './modules/finance/financeModule.js';
 import { registerWishlistModule } from './modules/wishlist/wishlistModule.js';
 import { registerBookmarksModule } from './modules/bookmarks/bookmarksModule.js';
+import { registerCountdownsModule } from './modules/countdowns/countdownsModule.js';
+import { registerGachaModule } from './modules/gacha/gachaModule.js';
 import { SettingsComponent } from './modules/settings/SettingsComponent.js';
+import { NotificationTray } from './components/NotificationTray.js';
+import { notificationService } from './services/notificationService.js';
+import { countdownsService } from './modules/countdowns/countdownsService.js';
 import './services/themeService.js';
 
 /**
@@ -31,10 +36,16 @@ async function initializeApp() {
         registerFinanceModule();
         registerWishlistModule();
         registerBookmarksModule();
+        registerCountdownsModule();
+        registerGachaModule();
 
         // Load all registered modules
         console.log('⚙️  Loading modules...');
         await moduleSystem.loadAllModules();
+
+        notificationService.start();
+        countdownsService.scheduleNotifications();
+        new NotificationTray().mount(document.getElementById('notification-tray'));
 
         // Setup settings button
         setupSettingsButton();

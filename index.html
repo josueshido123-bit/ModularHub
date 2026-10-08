@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="src/styles/modules.css">
     <link rel="stylesheet" href="src/styles/animations.css">
     <link rel="stylesheet" href="src/styles/settings.css">
+    <link rel="stylesheet" href="src/styles/notifications.css">
 </head>
 <body>
     <div id="app">
@@ -18,12 +19,15 @@
                     <h1 class="dashboard-title">SimpleDash</h1>
                     <p class="dashboard-subtitle">Your personal command center</p>
                 </div>
-                <button id="settings-btn" class="settings-button" aria-label="Settings">
+                <div class="header-actions">
+                    <div id="notification-tray"></div>
+                    <button id="settings-btn" class="settings-button" aria-label="Settings">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.98 2.98l4.24 4.24M1 12h6m6 0h6m-16.78 7.78l4.24-4.24m2.98-2.98l4.24-4.24"></path>
                     </svg>
-                </button>
+                    </button>
+                </div>
             </header>
 
             <main class="dashboard-content">
