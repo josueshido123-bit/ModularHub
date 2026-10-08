@@ -37,6 +37,14 @@
     flex-direction: column;
 }
 
+.module-modal[data-module-id] .module-modal-content {
+    width: 96vw;
+    height: 94vh;
+    max-width: 96vw;
+    max-height: 94vh;
+    overflow: hidden;
+}
+
 @keyframes modalSlideIn {
     from {
         transform: scale(0.95);
@@ -94,44 +102,23 @@
     flex: 1;
 }
 
-/* Keep scrolling available without exposing a scrollbar during animated swaps. */
-.module-modal-content,
-.module-modal-body,
-.finance-view-transition,
-.bookmarks-module-content,
-.wishlist-catalogue,
-.wishlist-history,
-.bookmarks-catalogue,
-.bookmarks-history,
-.wishlist-form-panel,
-.wishlist-detail-panel,
-.bookmarks-form-panel,
-.bookmarks-detail-panel {
-    scrollbar-width: none;
-    scrollbar-gutter: auto;
-}
-
-.module-modal-content::-webkit-scrollbar,
-.module-modal-body::-webkit-scrollbar,
-.finance-view-transition::-webkit-scrollbar,
-.bookmarks-module-content::-webkit-scrollbar,
-.wishlist-catalogue::-webkit-scrollbar,
-.wishlist-history::-webkit-scrollbar,
-.bookmarks-catalogue::-webkit-scrollbar,
-.bookmarks-history::-webkit-scrollbar,
-.wishlist-form-panel::-webkit-scrollbar,
-.wishlist-detail-panel::-webkit-scrollbar,
-.bookmarks-form-panel::-webkit-scrollbar,
-.bookmarks-detail-panel::-webkit-scrollbar {
-    display: none;
+.module-modal[data-module-id] .module-modal-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 /* Responsive modal */
 @media (max-width: 768px) {
     .module-modal-content {
-        max-width: 95vw;
+        width: 96vw;
         max-height: 95vh;
         border-radius: var(--radius-lg);
+    }
+
+    .module-modal[data-module-id] .module-modal-content {
+        height: 95vh;
+        max-height: 95vh;
     }
 
     .module-modal-header {
@@ -234,7 +221,7 @@
 .wishlist-history-row time { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
 
 /* Countdowns Module */
-.countdowns-module-content { display: flex; flex-direction: column; gap: var(--space-lg); width: 100%; height: clamp(28rem, 58vh, 38rem); overflow-y: auto; overscroll-behavior: contain; }
+.countdowns-module-content { display: flex; flex: 1; flex-direction: column; gap: var(--space-lg); width: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .countdowns-toolbar, .countdowns-list-toolbar, .countdowns-form-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
 .countdowns-toolbar h3 { margin-top: var(--space-xs); font-size: var(--font-size-xl); }
 .countdowns-eyebrow, .countdowns-featured-label { color: var(--color-primary-light); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: .08em; }

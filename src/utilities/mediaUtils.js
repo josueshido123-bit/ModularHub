@@ -152,17 +152,19 @@ export function bindMediaEditor(editor, positionInput, scaleInput, scaleOutput =
     editor.dataset.bound = 'true';
 
     editor.addEventListener('pointerdown', event => {
+        if (!event.isPrimary || event.button !== 0) return;
         if (event.target.closest('input, button, select, textarea')) return;
         const scale = normalizeMediaScale(scaleInput?.value);
         if (scale <= MIN_MEDIA_SCALE) return;
         event.preventDefault();
-        try { editor.setPointerCapture(event.pointerId); } catch {}
         const rect = editor.getBoundingClientRect();
         const startX = event.clientX;
         const startY = event.clientY;
+        const pointerId = event.pointerId;
         const [startPositionX, startPositionY] = normalizeMediaPosition(positionInput?.value || editor.dataset.position)
             .split(/\s+/).map(value => Number.parseFloat(value));
         const move = moveEvent => {
+            if (moveEvent.pointerId !== pointerId) return;
             const currentScale = normalizeMediaScale(scaleInput?.value);
             const panFactor = currentScale - 1;
             if (panFactor <= 0) return;
@@ -173,13 +175,14 @@ export function bindMediaEditor(editor, positionInput, scaleInput, scaleOutput =
             editor.dataset.position = position;
             applyTransform();
         };
-        const stop = () => {
-            editor.removeEventListener('pointermove', move);
-            editor.removeEventListener('pointerup', stop);
-            editor.removeEventListener('pointercancel', stop);
+        const stop = stopEvent => {
+            if (stopEvent.pointerId !== pointerId) return;
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', stop);
+            window.removeEventListener('pointercancel', stop);
         };
-        editor.addEventListener('pointermove', move);
-        editor.addEventListener('pointerup', stop, { once: true });
-        editor.addEventListener('pointercancel', stop, { once: true });
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', stop);
+        window.addEventListener('pointercancel', stop);
     });
 }
