@@ -2,6 +2,62 @@ export const DEFAULT_MEDIA_SCALE = 1.5;
 export const MIN_MEDIA_SCALE = 1;
 export const MAX_MEDIA_SCALE = 2.5;
 
+export async function readMediaFile(file) {
+    if (!file.type.startsWith('image/') || ['image/gif', 'image/svg+xml'].includes(file.type)) {
+        return readFileAsDataUrl(file);
+    }
+
+    let bitmap;
+    try {
+        bitmap = await createImageBitmap(file);
+        const maxDimension = 1600;
+        const ratio = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
+        canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Image processing is unavailable in this browser.');
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            const quality = 0.82 - attempt * 0.12;
+            const dataUrl = await canvasToDataUrl(canvas, quality);
+            if (dataUrl.length <= 350_000) return dataUrl;
+            canvas.width = Math.max(1, Math.round(canvas.width * 0.8));
+            canvas.height = Math.max(1, Math.round(canvas.height * 0.8));
+            context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        }
+
+        return await canvasToDataUrl(canvas, 0.3);
+    } finally {
+        bitmap?.close();
+    }
+}
+
+function canvasToDataUrl(canvas, quality) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+            if (!blob) {
+                reject(new Error('The selected image could not be optimized.'));
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error || new Error('The optimized image could not be read.'));
+            reader.readAsDataURL(blob);
+        }, 'image/webp', quality);
+    });
+}
+
+function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('The media file could not be read.'));
+        reader.readAsDataURL(file);
+    });
+}
+
 export function normalizeMediaPosition(position = '50% 50%') {
     const values = String(position || '50% 50%').split(/\s+/).slice(0, 2).map(value => {
         const parsed = Number.parseFloat(value);

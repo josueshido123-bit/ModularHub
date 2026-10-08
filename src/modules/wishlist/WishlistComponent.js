@@ -1,7 +1,7 @@
 import { wishlistService } from './wishlistService.js';
 import { financeService } from '../finance/financeService.js';
 import { formatCurrency, formatDate, showToast } from '../../utilities/uiUtils.js';
-import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform } from '../../utilities/mediaUtils.js';
+import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform, readMediaFile } from '../../utilities/mediaUtils.js';
 
 export class WishlistComponent {
     constructor(state = {}) {
@@ -96,7 +96,7 @@ export class WishlistComponent {
                 if (!confirm('Delete this wishlist item?')) return;
                 const itemId = event.currentTarget.closest('.wishlist-card').dataset.id;
                 if (!wishlistService.removeItem(itemId)) {
-                    showToast('Wishlist item could not be deleted. Browser storage may be full.', 'error');
+                    showToast('Wishlist item could not be deleted. Your changes were not saved.', 'error');
                     this.rerender(container);
                     return;
                 }
@@ -124,14 +124,14 @@ export class WishlistComponent {
         container.querySelectorAll('.wishlist-complete-btn').forEach(button => button.addEventListener('click', event => {
             event.stopPropagation();
             const item = wishlistService.completeItem(event.currentTarget.closest('.wishlist-card').dataset.id);
-            if (!item) showToast('Wishlist item could not be updated. Browser storage may be full.', 'error');
+            if (!item) showToast('Wishlist item could not be updated. Your changes were not saved.', 'error');
             this.rerender(container);
         }));
         container.querySelector('.wishlist-detail-close')?.addEventListener('click', () => this.closeDetail(container));
         container.querySelector('.detail-edit-btn')?.addEventListener('click', () => { this.mediaDraft = {}; this.state.editingId = this.state.detailId; this.state.detailId = null; this.rerender(container); container.querySelector('.wishlist-form-modal').classList.remove('hidden'); });
         container.querySelector('.detail-complete-btn')?.addEventListener('click', () => {
             if (!wishlistService.completeItem(this.state.detailId)) {
-                showToast('Wishlist item could not be updated. Browser storage may be full.', 'error');
+                showToast('Wishlist item could not be updated. Your changes were not saved.', 'error');
                 return;
             }
             this.state.detailId = null;
@@ -147,7 +147,7 @@ export class WishlistComponent {
         input.mediaPosition = input.mediaPosition || '50% 50%';
         const isEditing = Boolean(this.state.editingId);
         const item = isEditing ? wishlistService.updateItem(this.state.editingId, input) : wishlistService.addItem(input);
-        if (!item) return showToast('Wishlist item could not be saved. Browser storage may be full.', 'error');
+        if (!item) return showToast('Wishlist item could not be saved. Your changes were not saved.', 'error');
         showToast(isEditing ? 'Wishlist item updated' : 'Wishlist item added', 'success');
         this.state.editingId = null;
         this.mediaDraft = {};
@@ -157,18 +157,17 @@ export class WishlistComponent {
     handleMediaFile(event, container) {
         const file = event.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-            this.mediaDraft = { url: reader.result, type: file.type === 'video/mp4' || file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image', position: '50% 50%', scale: DEFAULT_MEDIA_SCALE };
+        readMediaFile(file).then(url => {
             const form = container.querySelector('.wishlist-form');
+            if (!form) return;
+            this.mediaDraft = { url, type: file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image', position: '50% 50%', scale: DEFAULT_MEDIA_SCALE };
             form.querySelector('input[name="mediaUrl"]').value = this.mediaDraft.url;
             form.querySelector('select[name="mediaType"]').value = this.mediaDraft.type;
             form.querySelector('input[name="mediaPosition"]').value = this.mediaDraft.position;
             form.querySelector('input[name="mediaScale"]').value = String(this.mediaDraft.scale);
             form.querySelector('.media-scale-value').value = `${Math.round(this.mediaDraft.scale * 100)}%`;
             this.renderMediaEditor(container);
-        };
-        reader.readAsDataURL(file);
+        }).catch(error => showToast(error.message, 'error'));
     }
 
     updateMediaPreview(container) {

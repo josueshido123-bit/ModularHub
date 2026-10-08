@@ -13,6 +13,14 @@ class WishlistService {
         this.data = storageService.load(this.dataKey, { items: [], history: [] });
         this.data.items ||= [];
         this.data.history ||= [];
+        const history = this.data.history.slice(0, 100).map(entry => {
+            if (!entry.details?.mediaUrl) return entry;
+            return { ...entry, details: { ...entry.details, mediaUrl: '' } };
+        });
+        if (history.length !== this.data.history.length || history.some((entry, index) => entry !== this.data.history[index])) {
+            this.data.history = history;
+            storageService.save(this.dataKey, this.data);
+        }
     }
 
     saveData() {
@@ -22,11 +30,13 @@ class WishlistService {
     }
 
     record(itemId, action, details = {}) {
-        this.data.history.unshift({ id: generateId(), itemId, action, details, date: new Date().toISOString() });
+        const { mediaUrl, ...historyDetails } = details;
+        this.data.history.unshift({ id: generateId(), itemId, action, details: historyDetails, date: new Date().toISOString() });
+        this.data.history.length = Math.min(this.data.history.length, 100);
     }
 
     mediaDetails(item) {
-        return { name: item.name, mediaUrl: item.mediaUrl, mediaType: item.mediaType };
+        return { name: item.name, mediaType: item.mediaType };
     }
 
     addItem(input) {

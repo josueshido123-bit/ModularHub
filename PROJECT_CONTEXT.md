@@ -98,6 +98,8 @@ Modules with category `gacha` render in a separate dashboard section under a cen
 #### 7. **Media Utilities** (`src/utilities/mediaUtils.js`)
 - Shared position normalization, zoom clamping, transform generation, and drag/slider binding
 - Used by Wishlist, Bookmarks, Countdowns, and Gacha media editors
+- Optimizes uploaded still images before persistence: resize to at most 1600px on the longest edge, encode as WebP, and reduce dimensions/quality as needed toward a 350KB data-URL target
+- Preserves GIF, SVG, and video uploads in their original data-URL form; these formats can still consume substantial browser storage
 
 ---
 
@@ -765,7 +767,8 @@ simpledash/
 │   │   └── themeService.js            # Persisted application-wide themes
 │   │
 │   ├── utilities/
-│   │   └── uiUtils.js                 # UI helper functions
+│   │   ├── uiUtils.js                 # UI helper functions
+│   │   └── mediaUtils.js              # Shared media processing and crop controls
 │   │
 │   ├── modules/
 │   │   ├── finance/
@@ -805,6 +808,14 @@ simpledash/
 - **Interface:** Save/Load/Remove/Subscribe
 - **Observer Pattern:** Listeners notified on changes
 - **Export/Import:** Full data backup/restore
+- **Quota behavior:** `save()` returns `false` and logs the storage exception when a write fails. Callers must treat `false` as failure, avoid success notifications, and restore in-memory mutations where applicable.
+
+### Local Media Storage
+
+- Wishlist, Bookmarks, Countdowns, and Gacha accept uploaded media and persist it inline as a data URL in their module records.
+- Shared `readMediaFile()` in `src/utilities/mediaUtils.js` converts ordinary still images to resized WebP (longest dimension at most 1600px) and targets data URLs of at most 350KB, progressively reducing quality and dimensions. SVG and GIF files, plus videos, are preserved rather than rasterized; they may remain large.
+- Wishlist and Bookmarks history entries retain descriptive metadata but do not copy media payloads. Both services cap history at the newest 100 entries and migrate older records by removing embedded history media URLs on load.
+- Browser localStorage has a finite per-origin quota. Image optimization and history de-duplication substantially reduce avoidable usage, but cannot guarantee writes for arbitrarily large GIF/video files or when unrelated browser data has already exhausted the quota. A larger-media solution requires storing binary blobs in IndexedDB (or a backend), rather than raising a localStorage limit.
 
 ### Accounts and Migration
 
@@ -935,7 +946,7 @@ No testing framework currently implemented. Recommended:
 - Integration: Testing Library (component rendering)
 - E2E: Cypress (user workflows)
 
-### Latest Live Validation
+### Latest Validation
 
 ✅ Finance and Wishlist modules load together without changing existing account-scoped data  
 ✅ Wishlist add, edit, completion, reopening, history, countdown, and Finance progress flows work  
@@ -946,6 +957,10 @@ No testing framework currently implemented. Recommended:
 ✅ Crop drags remain aligned while form panels fade in; 220px crop frames do not resize to intrinsic image dimensions  
 ✅ Wishlist form reopening starts with a clean draft and does not override saved item media or crop values  
 ✅ Wishlist storage write failures roll back in-memory changes and report an error; confirmed catalogue deletion records history  
+✅ Local persistence check: wishlist/bookmark additions and edits succeed with mocked localStorage, failed writes are reported and edits roll back  
+✅ Legacy-history migration check: embedded media URLs are removed from existing Wishlist and Bookmarks history and the cleaned data persists  
+✅ Shared image preprocessing check: ordinary images are resized and emitted as WebP; uploads use the shared helper across Wishlist, Bookmarks, Countdowns, and Gacha  
+✅ `node --check` passes for all JavaScript files after the storage/media changes  
 ✅ Catalogue cards remain fixed-size on desktop and mobile  
 ✅ Theme selection applies shared tokens across modules and persists per account  
 ✅ Module, Settings, Finance, and Wishlist overlays show coordinated close animations  
@@ -976,6 +991,7 @@ No testing framework currently implemented. Recommended:
 - Fast, simple, suitable for MVP
 - Easy to migrate to IndexedDB or backend later
 - No user authentication initially
+- Keep data stored in localStorage compact; never duplicate uploaded media into history/audit records. Use IndexedDB or a backend for robust storage of large binary media.
 
 ### 3. Modular Component Structure
 - Each module is independent

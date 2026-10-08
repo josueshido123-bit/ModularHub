@@ -1,6 +1,6 @@
 import { bookmarksService } from './bookmarksService.js';
 import { formatDate, showToast } from '../../utilities/uiUtils.js';
-import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform } from '../../utilities/mediaUtils.js';
+import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform, readMediaFile } from '../../utilities/mediaUtils.js';
 
 export class BookmarksComponent {
     constructor(state = {}) {
@@ -102,23 +102,22 @@ export class BookmarksComponent {
     }
 
     openEditor(container, itemId) { this.state.editingId = itemId; this.mediaDraft = {}; this.rerender(container); container.querySelector('.bookmarks-form-modal').classList.remove('hidden'); }
-    deleteItem(container, itemId, fromDetail = false) { if (!confirm('Delete this bookmark?')) return; bookmarksService.removeItem(itemId); this.state.detailId = fromDetail ? null : this.state.detailId; showToast('Bookmark deleted', 'success'); this.rerender(container); }
-    saveItem(event, container) { event.preventDefault(); const input = Object.fromEntries(new FormData(event.target).entries()); if (!input.name.trim() || !input.url.trim()) return showToast('Name and link are required', 'error'); input.mediaPosition ||= '50% 50%'; if (this.state.editingId) bookmarksService.updateItem(this.state.editingId, input); else bookmarksService.addItem(input); showToast(this.state.editingId ? 'Bookmark updated' : 'Bookmark saved', 'success'); this.state.editingId = null; this.mediaDraft = {}; this.rerender(container); }
+    deleteItem(container, itemId, fromDetail = false) { if (!confirm('Delete this bookmark?')) return; if (!bookmarksService.removeItem(itemId)) return showToast('Bookmark could not be deleted. Your changes were not saved.', 'error'); this.state.detailId = fromDetail ? null : this.state.detailId; showToast('Bookmark deleted', 'success'); this.rerender(container); }
+    saveItem(event, container) { event.preventDefault(); const input = Object.fromEntries(new FormData(event.target).entries()); if (!input.name.trim() || !input.url.trim()) return showToast('Name and link are required', 'error'); input.mediaPosition ||= '50% 50%'; const editing = Boolean(this.state.editingId); const item = editing ? bookmarksService.updateItem(this.state.editingId, input) : bookmarksService.addItem(input); if (!item) return showToast('Bookmark could not be saved. Your changes were not saved.', 'error'); showToast(editing ? 'Bookmark updated' : 'Bookmark saved', 'success'); this.state.editingId = null; this.mediaDraft = {}; this.rerender(container); }
     handleMediaFile(event, container) {
         const file = event.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-            this.mediaDraft = { url: reader.result, type: file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image', position: '50% 50%', scale: DEFAULT_MEDIA_SCALE };
+        readMediaFile(file).then(url => {
             const form = container.querySelector('.bookmarks-form');
+            if (!form) return;
+            this.mediaDraft = { url, type: file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image', position: '50% 50%', scale: DEFAULT_MEDIA_SCALE };
             form.querySelector('input[name="mediaUrl"]').value = this.mediaDraft.url;
             form.querySelector('select[name="mediaType"]').value = this.mediaDraft.type;
             form.querySelector('input[name="mediaPosition"]').value = this.mediaDraft.position;
             form.querySelector('input[name="mediaScale"]').value = String(this.mediaDraft.scale);
             form.querySelector('.media-scale-value').value = `${Math.round(this.mediaDraft.scale * 100)}%`;
             this.renderMediaEditor(container);
-        };
-        reader.readAsDataURL(file);
+        }).catch(error => showToast(error.message, 'error'));
     }
 
     updateMediaPreview(container) {

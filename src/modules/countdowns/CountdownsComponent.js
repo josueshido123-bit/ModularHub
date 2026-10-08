@@ -1,6 +1,6 @@
 import { countdownsService } from './countdownsService.js';
 import { showToast } from '../../utilities/uiUtils.js';
-import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform } from '../../utilities/mediaUtils.js';
+import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform, readMediaFile } from '../../utilities/mediaUtils.js';
 
 export class CountdownsComponent {
     constructor(state = {}) {
@@ -95,7 +95,7 @@ export class CountdownsComponent {
             const card = event.currentTarget.closest('[data-countdown-id]');
             if (!confirm(`Delete “${card.querySelector('h3').textContent}”?`)) return;
             if (!countdownsService.removeCountdown(card.dataset.countdownId)) {
-                showToast('Countdown could not be deleted. Browser storage may be full.', 'error');
+                showToast('Countdown could not be deleted. Your changes were not saved.', 'error');
                 return;
             }
             showToast('Countdown deleted', 'success');
@@ -137,7 +137,7 @@ export class CountdownsComponent {
             ? countdownsService.updateCountdown(this.state.editingId, input)
             : countdownsService.addCountdown(input);
         if (!countdown) {
-            showToast('Countdown could not be saved. Check the title and date, then try again.', 'error');
+            showToast('Countdown could not be saved. Your changes were not saved.', 'error');
             return;
         }
         this.state.formOpen = false;
@@ -150,20 +150,18 @@ export class CountdownsComponent {
     handleMediaFile(event, container) {
         const file = event.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onerror = () => showToast('Media file could not be read.', 'error');
-        reader.onload = () => {
-            const type = file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image';
-            this.mediaDraft = { url: reader.result, type, position: '50% 50%', scale: DEFAULT_MEDIA_SCALE };
+        readMediaFile(file).then(url => {
             const form = container.querySelector('.countdowns-form');
+            if (!form) return;
+            const type = file.type.startsWith('video/') ? 'video' : file.type === 'image/gif' ? 'gif' : 'image';
+            this.mediaDraft = { url, type, position: '50% 50%', scale: DEFAULT_MEDIA_SCALE };
             form.querySelector('input[name="mediaUrl"]').value = this.mediaDraft.url;
             form.querySelector('select[name="mediaType"]').value = type;
             form.querySelector('input[name="mediaPosition"]').value = this.mediaDraft.position;
             form.querySelector('input[name="mediaScale"]').value = String(this.mediaDraft.scale);
             form.querySelector('.media-scale-value').value = `${Math.round(this.mediaDraft.scale * 100)}%`;
             this.renderMediaEditor(container);
-        };
-        reader.readAsDataURL(file);
+        }).catch(error => showToast(error.message, 'error'));
     }
 
     updateMediaPreview(container) {

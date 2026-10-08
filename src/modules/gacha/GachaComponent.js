@@ -1,7 +1,7 @@
 import { gachaService } from './gachaService.js';
 import { GACHA_CATALOG, GACHA_GAMES, getCharacter, getCharacterArtwork, getGameName } from './gachaData.js';
 import { showToast } from '../../utilities/uiUtils.js';
-import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle } from '../../utilities/mediaUtils.js';
+import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle, readMediaFile } from '../../utilities/mediaUtils.js';
 
 export class GachaComponent {
     constructor(state = {}) {
@@ -177,18 +177,16 @@ export class GachaComponent {
     handleImageFile(event, container) {
         const file = event.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onerror = () => showToast('Image could not be read.', 'error');
-        reader.onload = () => {
-            this.imageDraft = reader.result;
+        readMediaFile(file).then(url => {
             const form = container.querySelector('.gacha-form');
+            if (!form) return;
+            this.imageDraft = url;
             form.querySelector('[name="imageUrl"]').value = this.imageDraft;
             form.querySelector('[name="mediaPosition"]').value = '50% 50%';
             form.querySelector('[name="mediaScale"]').value = String(DEFAULT_MEDIA_SCALE);
             form.querySelector('.media-scale-value').value = `${Math.round(DEFAULT_MEDIA_SCALE * 100)}%`;
             this.updateFormPreview(container);
-        };
-        reader.readAsDataURL(file);
+        }).catch(error => showToast(error.message, 'error'));
     }
 
     updateFormPreview(container) {
