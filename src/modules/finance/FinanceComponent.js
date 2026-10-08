@@ -1,8 +1,9 @@
 import { financeService } from './financeService.js';
 import { formatCurrency, formatDate, showToast } from '../../utilities/uiUtils.js';
+import { attachCardSizeControl, loadCardSize, renderCardSizeControl } from '../../utilities/cardSizeUtils.js';
 
 export class FinanceComponent {
-    constructor(state = {}) { this.state = { view: 'overview', ...state }; }
+    constructor(state = {}) { this.state = { view: 'overview', ...state }; this.cardSize = loadCardSize('finance'); }
 
     render() {
         const container = document.createElement('div');
@@ -14,7 +15,7 @@ export class FinanceComponent {
 
     renderContent() {
         if (financeService.getBalance() === 0 && !financeService.getTransactions().length && !financeService.getGoals().length) return `${this.renderInitialSetup()}${this.renderTransactionModal()}`;
-        return `<div class="finance-toolbar"><div class="finance-tabs">${['overview', 'transactions', 'goals'].map(view => `<button class="finance-tab ${this.state.view === view ? 'active' : ''}" data-view="${view}">${view[0].toUpperCase() + view.slice(1)}</button>`).join('')}</div><button class="btn btn-primary add-transaction-btn">+ Add Transaction</button></div><div class="finance-view-transition">${this.state.view === 'overview' ? this.renderOverview() : ''}${this.state.view === 'transactions' ? this.renderTransactions() : ''}${this.state.view === 'goals' ? this.renderGoals() : ''}</div>${this.renderTransactionModal()}`;
+        return `<div class="finance-toolbar"><div class="finance-tabs">${['overview', 'transactions', 'goals'].map(view => `<button class="finance-tab ${this.state.view === view ? 'active' : ''}" data-view="${view}">${view[0].toUpperCase() + view.slice(1)}</button>`).join('')}</div>${renderCardSizeControl(this.cardSize)}<button class="btn btn-primary add-transaction-btn">+ Add Transaction</button></div><div class="finance-view-transition">${this.state.view === 'overview' ? this.renderOverview() : ''}${this.state.view === 'transactions' ? this.renderTransactions() : ''}${this.state.view === 'goals' ? this.renderGoals() : ''}</div>${this.renderTransactionModal()}`;
     }
 
     renderInitialSetup() { return `<div class="finance-init"><div class="finance-init-header"><h2>💰 Finance Tracker</h2><p>Start by setting your initial balance</p></div><form class="finance-init-form"><div class="form-group"><label for="initial-balance">Initial Balance</label><div class="input-group"><span class="currency-symbol">$</span><input type="number" id="initial-balance" min="0" step="0.01" required></div></div><button class="btn btn-primary btn-block">Set Balance</button></form></div>`; }
@@ -33,6 +34,7 @@ export class FinanceComponent {
     renderTransaction(transaction) { const category = financeService.getCategory(transaction.category); return `<div class="transaction-item ${transaction.type}" data-id="${transaction.id}"><div class="transaction-icon">${category?.icon || '💳'}</div><div class="transaction-info"><div class="transaction-category">${this.escape(category?.name || 'Uncategorized')}</div><div class="transaction-note">${this.escape(transaction.note || 'No description')}</div></div><div class="transaction-amount"><span>${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount)}</span><div class="transaction-date">${formatDate(transaction.date, 'short')}</div></div><div class="transaction-actions"><button class="btn-icon edit-btn" aria-label="Edit description">✏️</button><button class="btn-icon delete-btn" aria-label="Delete">🗑️</button></div></div>`; }
 
     attachEventListeners(container) {
+        attachCardSizeControl(container, 'finance', this.cardSize, size => { this.cardSize = size; });
         container.querySelector('.finance-init-form')?.addEventListener('submit', e => { e.preventDefault(); financeService.setInitialBalance(parseFloat(container.querySelector('#initial-balance').value) || 0); this.rerender(container); });
         container.querySelectorAll('.finance-tab').forEach(button => button.addEventListener('click', () => this.rerender(container, button.dataset.view)));
         container.querySelector('.add-transaction-btn')?.addEventListener('click', () => this.showModal(container));

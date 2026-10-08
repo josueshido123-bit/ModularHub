@@ -2,11 +2,13 @@ import { wishlistService } from './wishlistService.js';
 import { financeService } from '../finance/financeService.js';
 import { formatCurrency, formatDate, showToast } from '../../utilities/uiUtils.js';
 import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform, readMediaFile } from '../../utilities/mediaUtils.js';
+import { attachCardSizeControl, loadCardSize, renderCardSizeControl } from '../../utilities/cardSizeUtils.js';
 
 export class WishlistComponent {
     constructor(state = {}) {
         this.state = { view: 'catalogue', editingId: null, detailId: null, ...state };
         this.mediaDraft = {};
+        this.cardSize = loadCardSize('wishlist');
     }
 
     render() {
@@ -20,7 +22,7 @@ export class WishlistComponent {
 
     renderContent() {
         const items = wishlistService.getItems();
-        return `<div class="wishlist-toolbar"><div class="wishlist-tabs"><button class="wishlist-tab ${this.state.view === 'catalogue' ? 'active' : ''}" data-view="catalogue">Catalogue</button><button class="wishlist-tab ${this.state.view === 'history' ? 'active' : ''}" data-view="history">History</button></div><button class="btn btn-primary wishlist-add-btn">+ Add item</button></div>${this.state.view === 'history' ? this.renderHistory() : `<div class="wishlist-summary"><span>${items.filter(item => item.status === 'active').length} active items</span><span>${items.filter(item => item.status === 'completed').length} completed</span></div><div class="wishlist-catalogue">${items.map(item => this.renderCard(item)).join('') || '<div class="wishlist-empty">Your catalogue is empty. Add something worth waiting for.</div>'}</div>`}${this.renderForm()}${this.renderDetail()}`;
+        return `<div class="wishlist-toolbar"><div class="wishlist-tabs"><button class="wishlist-tab ${this.state.view === 'catalogue' ? 'active' : ''}" data-view="catalogue">Catalogue</button><button class="wishlist-tab ${this.state.view === 'history' ? 'active' : ''}" data-view="history">History</button></div>${renderCardSizeControl(this.cardSize)}<button class="btn btn-primary wishlist-add-btn">+ Add item</button></div>${this.state.view === 'history' ? this.renderHistory() : `<div class="wishlist-summary"><span>${items.filter(item => item.status === 'active').length} active items</span><span>${items.filter(item => item.status === 'completed').length} completed</span></div><div class="wishlist-catalogue">${items.map(item => this.renderCard(item)).join('') || '<div class="wishlist-empty">Your catalogue is empty. Add something worth waiting for.</div>'}</div>`}${this.renderForm()}${this.renderDetail()}`;
     }
 
     renderCard(item) {
@@ -72,6 +74,7 @@ export class WishlistComponent {
     }
 
     attachEvents(container) {
+        attachCardSizeControl(container, 'wishlist', this.cardSize, size => { this.cardSize = size; });
         container.querySelectorAll('.wishlist-tab').forEach(button => button.addEventListener('click', () => this.rerender(container, button.dataset.view)));
         container.querySelector('.wishlist-add-btn')?.addEventListener('click', () => {
             this.state.editingId = null;

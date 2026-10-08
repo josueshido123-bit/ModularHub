@@ -106,6 +106,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
 }
 
 /* Responsive modal */
@@ -147,9 +148,11 @@
 /* Finance Module */
 .finance-module-content {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: var(--space-lg);
     width: 100%;
+    min-height: 0;
 }
 
 /* Wishlist Module */
@@ -157,9 +160,10 @@
 .wishlist-module-content,
 .bookmarks-module-content {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: var(--space-lg);
-    height: clamp(28rem, 58vh, 38rem);
+    min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
 }
@@ -313,11 +317,12 @@
 }
 
 /* Gacha Character Registry */
-.gacha-module-content { display: flex; flex-direction: column; gap: var(--space-lg); width: 100%; height: clamp(28rem, 58vh, 38rem); overflow-y: auto; overscroll-behavior: contain; }
+.gacha-module-content { display: flex; flex: 1; flex-direction: column; gap: var(--space-lg); width: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .gacha-toolbar, .gacha-controls, .gacha-tabs, .gacha-game-filters, .gacha-list-heading, .gacha-card-actions, .gacha-form-header, .gacha-form-actions { display: flex; align-items: center; }
 .gacha-toolbar, .gacha-controls, .gacha-list-heading, .gacha-form-header { justify-content: space-between; gap: var(--space-md); }
 .gacha-toolbar h3 { margin: var(--space-xs) 0; font-size: var(--font-size-xl); }
-.gacha-toolbar p { margin: 0; color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
+.gacha-toolbar p { display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-md); margin: 0; color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
+.gacha-owned-count strong { color: var(--color-text); font-weight: var(--font-weight-semibold); }
 .gacha-eyebrow { color: var(--color-primary-light); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
 .gacha-controls { flex-wrap: wrap; border-bottom: 1px solid var(--color-border); }
 .gacha-tabs { gap: var(--space-lg); }
@@ -470,7 +475,8 @@
 .finance-tab { background: none; border: 0; color: var(--color-text-tertiary); padding: var(--space-sm); cursor: pointer; }
 .finance-tab.active { color: var(--color-primary-light); border-bottom: 2px solid var(--color-primary); }
 .finance-view-transition {
-    height: clamp(28rem, 58vh, 38rem);
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     animation: financeViewEnter 220ms ease both;
@@ -811,8 +817,6 @@
         grid-column: span 1;
     }
     .finance-toolbar { align-items: flex-start; flex-direction: column; }
-    .finance-view-transition { height: 34rem; }
-    .wishlist-module-content, .bookmarks-module-content { height: 34rem; }
     .wishlist-toolbar { align-items: flex-start; flex-direction: column; }
     .wishlist-catalogue { grid-template-columns: repeat(auto-fill, 200px); grid-auto-rows: 340px; justify-content: center; }
     .wishlist-card { width: 200px; height: 340px; }
@@ -841,4 +845,83 @@
     .finance-stats-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Shared item-card sizing controls */
+.card-size-control { display: inline-flex; align-items: center; gap: var(--space-xs); flex-shrink: 0; }
+.card-size-label { color: var(--color-text-tertiary); font-size: var(--font-size-xs); white-space: nowrap; }
+.card-size-options { display: inline-flex; gap: 2px; padding: 2px; background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: 999px; }
+.card-size-option { padding: 4px var(--space-sm); color: var(--color-text-tertiary); background: transparent; border: 0; border-radius: 999px; cursor: pointer; font: inherit; font-size: var(--font-size-xs); transition: color var(--transition-fast), background-color var(--transition-fast); }
+.card-size-option:hover, .card-size-option.active { color: var(--color-text); }
+.card-size-option.active { background: var(--color-bg-secondary); box-shadow: 0 1px 3px rgba(0, 0, 0, .2); }
+.card-size-option:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+[data-card-size] {
+    --item-card-min-width: 210px;
+    --item-card-min-height: 280px;
+    --item-card-gap: var(--space-md);
+    --item-card-media-height: 164px;
+}
+[data-card-size="small"] { --item-card-min-width: 160px; --item-card-min-height: 220px; --item-card-gap: var(--space-sm); --item-card-media-height: 120px; }
+[data-card-size="large"] { --item-card-min-width: 280px; --item-card-min-height: 360px; --item-card-gap: var(--space-lg); --item-card-media-height: 220px; }
+.resizable-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--item-card-min-width)), 1fr)); gap: var(--item-card-gap); align-content: start; }
+.resizable-item-card { min-width: 0; min-height: var(--item-card-min-height); }
+.resizable-item-card-media { height: var(--item-card-media-height); }
+
+.wishlist-module-content[data-card-size="small"] .wishlist-catalogue { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); grid-auto-rows: 300px; }
+.wishlist-module-content[data-card-size="small"] .wishlist-card { width: 100%; height: 300px; }
+.wishlist-module-content[data-card-size="small"] .wishlist-card-open { height: 140px; flex-basis: 140px; }
+.wishlist-module-content[data-card-size="large"] .wishlist-catalogue { grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); grid-auto-rows: 420px; }
+.wishlist-module-content[data-card-size="large"] .wishlist-card { width: 100%; height: 420px; }
+.wishlist-module-content[data-card-size="large"] .wishlist-card-open { height: 230px; flex-basis: 230px; }
+
+.countdowns-module-content[data-card-size="small"] .countdowns-card { min-height: 84px; gap: var(--space-md); padding: var(--space-sm) var(--space-md); }
+.countdowns-module-content[data-card-size="small"] .countdowns-card-media { width: 54px; height: 54px; }
+.countdowns-module-content[data-card-size="small"] .countdowns-card.has-media { grid-template-columns: 54px minmax(100px, 1fr) minmax(180px, .85fr) auto; }
+.countdowns-module-content[data-card-size="small"] .countdowns-card-copy h3 { font-size: var(--font-size-sm); }
+.countdowns-module-content[data-card-size="small"] .countdowns-card-timer .countdowns-units strong { font-size: var(--font-size-sm); }
+.countdowns-module-content[data-card-size="large"] .countdowns-card { min-height: 148px; gap: var(--space-xl); padding: var(--space-lg) var(--space-xl); }
+.countdowns-module-content[data-card-size="large"] .countdowns-card-media { width: 100px; height: 100px; }
+.countdowns-module-content[data-card-size="large"] .countdowns-card.has-media { grid-template-columns: 100px minmax(150px, 1fr) minmax(250px, .85fr) auto; }
+.countdowns-module-content[data-card-size="large"] .countdowns-card-copy h3 { font-size: var(--font-size-lg); }
+.countdowns-module-content[data-card-size="large"] .countdowns-card-timer .countdowns-units strong { font-size: var(--font-size-lg); }
+
+.gacha-module-content[data-card-size="small"] .gacha-character-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.gacha-module-content[data-card-size="small"] .gacha-character-card { grid-template-rows: 125px minmax(70px, 1fr) auto; min-height: 250px; }
+.gacha-module-content[data-card-size="small"] .gacha-card-copy { padding: var(--space-sm); }
+.gacha-module-content[data-card-size="small"] .gacha-card-actions { padding: 0 var(--space-sm) var(--space-sm); }
+.gacha-module-content[data-card-size="large"] .gacha-character-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.gacha-module-content[data-card-size="large"] .gacha-character-card { grid-template-rows: 220px minmax(100px, 1fr) auto; min-height: 370px; }
+.gacha-module-content[data-card-size="large"] .gacha-target-card { grid-template-rows: 220px minmax(165px, 1fr) auto; }
+
+.bookmarks-module-content[data-card-size="small"] .bookmarks-featured { min-height: 210px; }
+.bookmarks-module-content[data-card-size="small"] .bookmarks-featured-open { min-height: 210px; }
+.bookmarks-module-content[data-card-size="small"] .bookmarks-featured-info { padding: var(--space-lg); gap: var(--space-sm); }
+.bookmarks-module-content[data-card-size="small"] .bookmarks-quick-item { grid-template-columns: 54px 1fr auto; min-height: 62px; gap: var(--space-sm); padding: var(--space-xs) var(--space-sm); }
+.bookmarks-module-content[data-card-size="small"] .bookmarks-quick-media { width: 54px; height: 44px; }
+.bookmarks-module-content[data-card-size="large"] .bookmarks-featured { min-height: 340px; }
+.bookmarks-module-content[data-card-size="large"] .bookmarks-featured-open { min-height: 340px; }
+.bookmarks-module-content[data-card-size="large"] .bookmarks-featured-info { padding: var(--space-2xl); }
+.bookmarks-module-content[data-card-size="large"] .bookmarks-quick-item { grid-template-columns: 96px 1fr auto; min-height: 104px; gap: var(--space-lg); padding: var(--space-md) var(--space-lg); }
+.bookmarks-module-content[data-card-size="large"] .bookmarks-quick-media { width: 96px; height: 76px; }
+
+.finance-module-content[data-card-size="small"] .transaction-item { gap: var(--space-sm); padding: var(--space-sm); }
+.finance-module-content[data-card-size="small"] .transaction-icon { font-size: var(--font-size-lg); }
+.finance-module-content[data-card-size="small"] .goal-item { padding: var(--space-sm); margin-block: var(--space-sm); }
+.finance-module-content[data-card-size="large"] .transaction-item { gap: var(--space-lg); padding: var(--space-lg); }
+.finance-module-content[data-card-size="large"] .transaction-icon { font-size: var(--font-size-3xl); }
+.finance-module-content[data-card-size="large"] .goal-item { padding: var(--space-lg); margin-block: var(--space-lg); }
+
+@media (max-width: 640px) {
+    .countdowns-module-content[data-card-size="small"] .countdowns-card.has-media { grid-template-columns: 48px minmax(0, 1fr); }
+    .countdowns-module-content[data-card-size="small"] .countdowns-card-media { width: 48px; height: 48px; }
+    .countdowns-module-content[data-card-size="large"] .countdowns-card.has-media { grid-template-columns: 72px minmax(0, 1fr); }
+    .countdowns-module-content[data-card-size="large"] .countdowns-card-media { width: 72px; height: 72px; }
+}
+
+@media (max-width: 480px) {
+    .card-size-control { flex-wrap: wrap; }
+    .card-size-option { padding-inline: 6px; }
+    .wishlist-module-content[data-card-size="large"] .wishlist-catalogue { grid-template-columns: minmax(0, 1fr); }
+    .gacha-module-content[data-card-size="small"] .gacha-character-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 }

@@ -1,11 +1,13 @@
 import { bookmarksService } from './bookmarksService.js';
 import { formatDate, showToast } from '../../utilities/uiUtils.js';
 import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform, readMediaFile } from '../../utilities/mediaUtils.js';
+import { attachCardSizeControl, loadCardSize, renderCardSizeControl } from '../../utilities/cardSizeUtils.js';
 
 export class BookmarksComponent {
     constructor(state = {}) {
         this.state = { view: 'library', editingId: null, detailId: null, ...state };
         this.mediaDraft = {};
+        this.cardSize = loadCardSize('bookmarks');
     }
 
     render() {
@@ -23,7 +25,7 @@ export class BookmarksComponent {
     renderLibrary() {
         const items = bookmarksService.getItems();
         const featured = items[0];
-        return `<div class="bookmarks-command-bar"><div><span class="eyebrow">Reference shelf</span><h3>Saved for later</h3><p>${items.length} link${items.length === 1 ? '' : 's'} in your library</p></div><div class="bookmarks-command-actions"><button class="bookmarks-tab active" data-view="library">Library</button><button class="bookmarks-tab" data-view="history">History</button><button class="btn btn-primary bookmarks-add-btn">+ Add bookmark</button></div></div>${featured ? `<div class="bookmarks-featured-wrap"><span class="bookmarks-section-label">Featured bookmark</span>${this.renderFeatured(featured)}</div><div class="bookmarks-quick-list"><span class="bookmarks-section-label">Quick access</span>${items.slice(1).map(item => this.renderCompact(item)).join('') || '<div class="bookmarks-empty">Add another bookmark to build your quick access list.</div>'}</div>` : '<div class="bookmarks-empty">Your reference shelf is empty. Save a useful link to get started.</div>'}`;
+        return `<div class="bookmarks-command-bar"><div><span class="eyebrow">Reference shelf</span><h3>Saved for later</h3><p>${items.length} link${items.length === 1 ? '' : 's'} in your library</p></div><div class="bookmarks-command-actions"><button class="bookmarks-tab active" data-view="library">Library</button><button class="bookmarks-tab" data-view="history">History</button>${renderCardSizeControl(this.cardSize)}<button class="btn btn-primary bookmarks-add-btn">+ Add bookmark</button></div></div>${featured ? `<div class="bookmarks-featured-wrap"><span class="bookmarks-section-label">Featured bookmark</span>${this.renderFeatured(featured)}</div><div class="bookmarks-quick-list"><span class="bookmarks-section-label">Quick access</span>${items.slice(1).map(item => this.renderCompact(item)).join('') || '<div class="bookmarks-empty">Add another bookmark to build your quick access list.</div>'}</div>` : '<div class="bookmarks-empty">Your reference shelf is empty. Save a useful link to get started.</div>'}`;
     }
 
     renderFeatured(item) {
@@ -39,7 +41,7 @@ export class BookmarksComponent {
     }
 
     renderHistory() {
-        return `<section class="bookmarks-history"><div class="bookmarks-history-heading"><div><span class="eyebrow">Audit trail</span><h3>Bookmark history</h3></div><div class="bookmarks-command-actions"><button class="bookmarks-tab" data-view="library">Library</button><button class="bookmarks-tab active" data-view="history">History</button><button class="btn btn-primary bookmarks-add-btn">+ Add bookmark</button></div></div><div class="bookmarks-timeline">${bookmarksService.getHistory().map(entry => { const item = bookmarksService.getItem(entry.itemId); const historyItem = item || entry.details; return `<div class="bookmarks-timeline-entry"><div class="bookmarks-timeline-marker"></div><div class="bookmarks-timeline-media">${this.renderMedia(historyItem, 'history')}</div><div class="bookmarks-timeline-copy"><strong>${this.escape(entry.details?.name || item?.name || 'Removed bookmark')}</strong><span>${this.escape(entry.action)}</span></div><time>${formatDate(entry.date, 'short')}</time></div>`; }).join('') || '<div class="bookmarks-empty">Bookmark changes will appear here.</div>'}</div></section>`;
+        return `<section class="bookmarks-history"><div class="bookmarks-history-heading"><div><span class="eyebrow">Audit trail</span><h3>Bookmark history</h3></div><div class="bookmarks-command-actions"><button class="bookmarks-tab" data-view="library">Library</button><button class="bookmarks-tab active" data-view="history">History</button>${renderCardSizeControl(this.cardSize)}<button class="btn btn-primary bookmarks-add-btn">+ Add bookmark</button></div></div><div class="bookmarks-timeline">${bookmarksService.getHistory().map(entry => { const item = bookmarksService.getItem(entry.itemId); const historyItem = item || entry.details; return `<div class="bookmarks-timeline-entry"><div class="bookmarks-timeline-marker"></div><div class="bookmarks-timeline-media">${this.renderMedia(historyItem, 'history')}</div><div class="bookmarks-timeline-copy"><strong>${this.escape(entry.details?.name || item?.name || 'Removed bookmark')}</strong><span>${this.escape(entry.action)}</span></div><time>${formatDate(entry.date, 'short')}</time></div>`; }).join('') || '<div class="bookmarks-empty">Bookmark changes will appear here.</div>'}</div></section>`;
     }
 
     renderMedia(item, size) {
@@ -79,6 +81,7 @@ export class BookmarksComponent {
     }
 
     attachEvents(container) {
+        attachCardSizeControl(container, 'bookmarks', this.cardSize, size => { this.cardSize = size; });
         container.querySelectorAll('.bookmarks-tab').forEach(button => button.addEventListener('click', () => this.rerender(container, button.dataset.view)));
         container.querySelector('.bookmarks-add-btn')?.addEventListener('click', () => {
             this.state.editingId = null;

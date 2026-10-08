@@ -1,11 +1,13 @@
 import { countdownsService } from './countdownsService.js';
 import { showToast } from '../../utilities/uiUtils.js';
 import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle as getMediaStyle, mediaTransform as getMediaTransform, readMediaFile } from '../../utilities/mediaUtils.js';
+import { attachCardSizeControl, loadCardSize, renderCardSizeControl } from '../../utilities/cardSizeUtils.js';
 
 export class CountdownsComponent {
     constructor(state = {}) {
         this.state = { filter: 'upcoming', editingId: null, formOpen: false, ...state };
         this.mediaDraft = {};
+        this.cardSize = loadCardSize('countdowns');
         this.timer = null;
         this.removalObserver = null;
     }
@@ -28,7 +30,7 @@ export class CountdownsComponent {
         const featured = upcoming[0];
         const featuredMedia = featured ? this.renderMedia(featured, 'featured') : '';
 
-        return `<div class="countdowns-toolbar"><div><span class="countdowns-eyebrow">MARK THE MOMENT</span><h3>Your next chapter</h3></div><button class="btn btn-primary countdowns-add">+ New countdown</button></div><section class="countdowns-featured ${featuredMedia ? 'has-media' : ''}">${featured ? `${featuredMedia ? `<div class="countdowns-featured-media">${featuredMedia}</div>` : ''}<div class="countdowns-featured-copy"><span class="countdowns-featured-label">NEXT UP</span><h2>${this.escape(featured.title)}</h2><time>${this.formatDate(featured.targetAt)}</time>${featured.note ? `<p>${this.escape(featured.note)}</p>` : ''}</div><div class="countdowns-featured-clock">${this.renderTimer(featured.targetAt)}</div>` : '<div class="countdowns-featured-empty"><span class="countdowns-featured-label">NEXT UP</span><h2>No upcoming moments</h2><p>Add a date to start the countdown.</p></div>'}</section><div class="countdowns-list-toolbar"><div class="countdowns-filters" role="group" aria-label="Filter countdowns"><button class="countdowns-filter ${this.state.filter === 'upcoming' ? 'active' : ''}" data-filter="upcoming" aria-pressed="${this.state.filter === 'upcoming'}">Upcoming <span>${upcoming.length}</span></button><button class="countdowns-filter ${this.state.filter === 'past' ? 'active' : ''}" data-filter="past" aria-pressed="${this.state.filter === 'past'}">Past <span>${past.length}</span></button><button class="countdowns-filter ${this.state.filter === 'all' ? 'active' : ''}" data-filter="all" aria-pressed="${this.state.filter === 'all'}">All <span>${items.length}</span></button></div><span class="countdowns-list-caption">${filtered.length} ${filtered.length === 1 ? 'moment' : 'moments'}</span></div><div class="countdowns-list">${filtered.map(item => this.renderCard(item, now)).join('') || `<div class="countdowns-empty">${this.state.filter === 'past' ? 'No moments have passed yet.' : 'Nothing on the horizon. Add a countdown to begin.'}</div>`}</div>${this.state.formOpen ? this.renderForm() : ''}`;
+        return `<div class="countdowns-toolbar"><div><span class="countdowns-eyebrow">MARK THE MOMENT</span><h3>Your next chapter</h3></div><button class="btn btn-primary countdowns-add">+ New countdown</button></div><section class="countdowns-featured ${featuredMedia ? 'has-media' : ''}">${featured ? `${featuredMedia ? `<div class="countdowns-featured-media">${featuredMedia}</div>` : ''}<div class="countdowns-featured-copy"><span class="countdowns-featured-label">NEXT UP</span><h2>${this.escape(featured.title)}</h2><time>${this.formatDate(featured.targetAt)}</time>${featured.note ? `<p>${this.escape(featured.note)}</p>` : ''}</div><div class="countdowns-featured-clock">${this.renderTimer(featured.targetAt)}</div>` : '<div class="countdowns-featured-empty"><span class="countdowns-featured-label">NEXT UP</span><h2>No upcoming moments</h2><p>Add a date to start the countdown.</p></div>'}</section><div class="countdowns-list-toolbar"><div class="countdowns-filters" role="group" aria-label="Filter countdowns"><button class="countdowns-filter ${this.state.filter === 'upcoming' ? 'active' : ''}" data-filter="upcoming" aria-pressed="${this.state.filter === 'upcoming'}">Upcoming <span>${upcoming.length}</span></button><button class="countdowns-filter ${this.state.filter === 'past' ? 'active' : ''}" data-filter="past" aria-pressed="${this.state.filter === 'past'}">Past <span>${past.length}</span></button><button class="countdowns-filter ${this.state.filter === 'all' ? 'active' : ''}" data-filter="all" aria-pressed="${this.state.filter === 'all'}">All <span>${items.length}</span></button></div><span class="countdowns-list-caption">${filtered.length} ${filtered.length === 1 ? 'moment' : 'moments'}</span>${renderCardSizeControl(this.cardSize)}</div><div class="countdowns-list">${filtered.map(item => this.renderCard(item, now)).join('') || `<div class="countdowns-empty">${this.state.filter === 'past' ? 'No moments have passed yet.' : 'Nothing on the horizon. Add a countdown to begin.'}</div>`}</div>${this.state.formOpen ? this.renderForm() : ''}`;
     }
 
     renderCard(item, now) {
@@ -79,6 +81,7 @@ export class CountdownsComponent {
     }
 
     attachEvents(container) {
+        attachCardSizeControl(container, 'countdowns', this.cardSize, size => { this.cardSize = size; });
         container.querySelector('.countdowns-add')?.addEventListener('click', () => this.openForm(container));
         container.querySelectorAll('.countdowns-filter').forEach(button => button.addEventListener('click', () => {
             this.state.filter = button.dataset.filter;

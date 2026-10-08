@@ -2,11 +2,13 @@ import { gachaService } from './gachaService.js';
 import { GACHA_CATALOG, GACHA_GAMES, getCharacter, getCharacterArtwork, getGameName } from './gachaData.js';
 import { showToast } from '../../utilities/uiUtils.js';
 import { bindMediaEditor, DEFAULT_MEDIA_SCALE, ensureMediaScaleControl, mediaStyle, readMediaFile } from '../../utilities/mediaUtils.js';
+import { attachCardSizeControl, loadCardSize, renderCardSizeControl } from '../../utilities/cardSizeUtils.js';
 
 export class GachaComponent {
     constructor(state = {}) {
         this.state = { view: 'roster', game: 'all', search: '', formMode: null, editingId: null, ...state };
         this.imageDraft = '';
+        this.cardSize = loadCardSize('gacha');
         this.timer = null;
         this.removalObserver = null;
     }
@@ -21,10 +23,16 @@ export class GachaComponent {
     }
 
     renderContent() {
-        const items = this.state.view === 'roster' ? gachaService.getRoster() : gachaService.getTargets();
+        const roster = gachaService.getRoster();
+        const targets = gachaService.getTargets();
+        const items = this.state.view === 'roster' ? roster : targets;
         const filtered = items.filter(item => (this.state.game === 'all' || item.game === this.state.game)
             && `${item.name} ${getGameName(item.game)}`.toLowerCase().includes(this.state.search.toLowerCase()));
-        return `<div class="gacha-toolbar"><div><span class="gacha-eyebrow">GACHA COLLECTION</span><h3>Character Registry</h3><p>${gachaService.getRoster().length} owned · ${gachaService.getTargets().length} wanted</p></div><button class="btn btn-primary gacha-add">${this.state.view === 'roster' ? '+ Add character' : '+ Add target'}</button></div><div class="gacha-controls"><div class="gacha-tabs" role="tablist" aria-label="Character lists"><button class="gacha-tab ${this.state.view === 'roster' ? 'active' : ''}" data-view="roster" role="tab" aria-selected="${this.state.view === 'roster'}">My registry <span>${gachaService.getRoster().length}</span></button><button class="gacha-tab ${this.state.view === 'targets' ? 'active' : ''}" data-view="targets" role="tab" aria-selected="${this.state.view === 'targets'}">Character wishlist <span>${gachaService.getTargets().length}</span></button></div><label class="gacha-search"><span class="sr-only">Search characters</span><input class="gacha-search-input" type="search" value="${this.escape(this.state.search)}" placeholder="Search characters"></label></div><div class="gacha-game-filters" role="group" aria-label="Filter by game">${[['all', 'All games'], ...GACHA_GAMES.map(game => [game.id, game.name])].map(([id, name]) => `<button class="gacha-game-filter ${this.state.game === id ? 'active' : ''}" data-game="${id}" aria-pressed="${this.state.game === id}">${this.escape(name)}</button>`).join('')}</div><div class="gacha-list-heading"><span>${this.state.view === 'roster' ? 'CHARACTER ROSTER' : 'WISH LIST & ARRIVAL COUNTDOWNS'}</span><span>${filtered.length} ${filtered.length === 1 ? 'character' : 'characters'}</span></div><div class="gacha-character-grid">${filtered.map(item => this.state.view === 'roster' ? this.renderCharacterCard(item) : this.renderTargetCard(item)).join('') || `<div class="gacha-empty">${this.state.view === 'roster' ? 'Your registry is empty. Add a character from either game to get started.' : 'No characters on your wish list yet. Plan who you want next.'}</div>`}</div>${this.state.formMode ? this.renderForm() : ''}`;
+        const ownedCounts = GACHA_GAMES.map(game => {
+            const count = roster.filter(character => character.game === game.id).length;
+            return `<span class="gacha-owned-count">${this.escape(game.name)}: <strong>${count}</strong></span>`;
+        }).join('');
+        return `<div class="gacha-toolbar"><div><span class="gacha-eyebrow">GACHA COLLECTION</span><h3>Character Registry</h3><p aria-label="Owned characters by game and wishlist total">${ownedCounts}<span>${targets.length} wanted</span></p></div><button class="btn btn-primary gacha-add">${this.state.view === 'roster' ? '+ Add character' : '+ Add target'}</button></div><div class="gacha-controls"><div class="gacha-tabs" role="tablist" aria-label="Character lists"><button class="gacha-tab ${this.state.view === 'roster' ? 'active' : ''}" data-view="roster" role="tab" aria-selected="${this.state.view === 'roster'}">My registry <span>${roster.length}</span></button><button class="gacha-tab ${this.state.view === 'targets' ? 'active' : ''}" data-view="targets" role="tab" aria-selected="${this.state.view === 'targets'}">Character wishlist <span>${targets.length}</span></button></div><label class="gacha-search"><span class="sr-only">Search characters</span><input class="gacha-search-input" type="search" value="${this.escape(this.state.search)}" placeholder="Search characters"></label></div><div class="gacha-game-filters" role="group" aria-label="Filter by game">${[['all', 'All games'], ...GACHA_GAMES.map(game => [game.id, game.name])].map(([id, name]) => `<button class="gacha-game-filter ${this.state.game === id ? 'active' : ''}" data-game="${id}" aria-pressed="${this.state.game === id}">${this.escape(name)}</button>`).join('')}</div><div class="gacha-list-heading"><span>${this.state.view === 'roster' ? 'CHARACTER ROSTER' : 'WISH LIST & ARRIVAL COUNTDOWNS'}</span><span>${filtered.length} ${filtered.length === 1 ? 'character' : 'characters'}</span>${renderCardSizeControl(this.cardSize)}</div><div class="gacha-character-grid">${filtered.map(item => this.state.view === 'roster' ? this.renderCharacterCard(item) : this.renderTargetCard(item)).join('') || `<div class="gacha-empty">${this.state.view === 'roster' ? 'Your registry is empty. Add a character from either game to get started.' : 'No characters on your wish list yet. Plan who you want next.'}</div>`}</div>${this.state.formMode ? this.renderForm() : ''}`;
     }
 
     renderCharacterCard(item) {
@@ -65,6 +73,7 @@ export class GachaComponent {
     }
 
     attachEvents(container) {
+        attachCardSizeControl(container, 'gacha', this.cardSize, size => { this.cardSize = size; });
         container.querySelector('.gacha-add')?.addEventListener('click', () => this.openForm(container, this.state.view === 'roster' ? 'roster-add' : 'target-add'));
         container.querySelectorAll('.gacha-tab').forEach(button => button.addEventListener('click', () => {
             this.state.view = button.dataset.view;

@@ -101,6 +101,13 @@ Modules with category `gacha` render in a separate dashboard section under a cen
 - Optimizes uploaded still images before persistence: resize to at most 1600px on the longest edge, encode as WebP, and reduce dimensions/quality as needed toward a 350KB data-URL target
 - Preserves GIF, SVG, and video uploads in their original data-URL form; these formats can still consume substantial browser storage
 
+#### 8. **Card Size Utilities** (`src/utilities/cardSizeUtils.js`)
+- Reusable Small / Medium / Large control for every module that displays user-created item cards
+- Saves a separate account-scoped preference for each module ID; Finance, Wishlist, Bookmarks, Countdowns, and Gacha already use it
+- Restores the selected size whenever a module is reopened; reports when a preference cannot be saved
+- Sets `data-card-size` on the module content root so the shared `.resizable-card-grid`, `.resizable-item-card`, and `.resizable-item-card-media` classes can apply the standard responsive sizing tokens
+- Modules with specialized layouts can keep their own CSS and target their root's `[data-card-size]` value; card size never changes module data or dashboard launcher cards
+
 ---
 
 ## 📦 Module Structure
@@ -156,6 +163,31 @@ class ModuleComponent {
 }
 ```
 
+### Adding Card Size to a Module
+
+Card sizing is a shared module capability; do not implement module-specific storage or duplicate the size selector. Any module that displays resizable item cards uses the shared utility with its own registered module ID, which keeps its account-scoped preference independent of all other modules:
+
+```javascript
+import {
+    attachCardSizeControl,
+    loadCardSize,
+    renderCardSizeControl
+} from '../../utilities/cardSizeUtils.js';
+
+// In the component constructor:
+this.cardSize = loadCardSize('your-module-id');
+
+// Include beside the module's list actions in renderContent():
+${renderCardSizeControl(this.cardSize)}
+
+// In the module's event attachment method:
+attachCardSizeControl(container, 'your-module-id', this.cardSize, size => {
+    this.cardSize = size;
+});
+```
+
+The shared attach helper sets and updates `data-card-size` on the module content root, saves the preference, and reports storage errors. For a standard grid, use `.resizable-card-grid` on the item collection, `.resizable-item-card` on each item, and optionally `.resizable-item-card-media` on its media frame. These shared classes use the standard size tokens; specialized list/card compositions may instead style their own classes with selectors such as `.your-module-content[data-card-size="small"]`. Keep the control in the module's normal toolbar so it remains easy to find.
+
 ### Adding a New Module
 
 1. Create module folder: `src/modules/{module-name}/`
@@ -169,6 +201,7 @@ class ModuleComponent {
    ```
 6. The module will automatically appear as a square card in the toolbelt
 7. Update PROJECT_CONTEXT.md with module details
+8. If it displays user-created item cards, follow **Adding Card Size to a Module** and use the shared card-size utility and sizing classes
 
 ### Module Lifecycle
 
@@ -182,7 +215,7 @@ class ModuleComponent {
 
 **Important design rule:** Modules must not use the exact same UI structure as one another. They should share the application design system, including theme tokens, typography, spacing, borders, buttons, animation timing, responsive behavior, and accessibility conventions, but each module must have a recognizable composition suited to its purpose. Modules do not need to be dramatically different; they do need distinguishable layouts, information hierarchies, controls, and interaction patterns so Finance, Wishlist, Bookmarks, and future modules feel like separate tools within the same product.
 
-**Important layout rule:** A module body must never change size when switching sections, tabs, categories, filters, or states. Each module must reserve a stable responsive body viewport and handle longer content with internal scrolling, so the surrounding modal and page do not jump or resize.
+**Important layout rule:** A module body must never change size when switching sections, tabs, categories, filters, or states. Each module must fill the available modal-body viewport and handle longer content with internal scrolling, so the surrounding modal and page do not jump or resize or leave an unused strip below the scroll area.
 
 ---
 
@@ -248,6 +281,7 @@ src/modules/finance/
 ✅ **Responsive UI** - Mobile-friendly transaction list  
 ✅ **Animations** - Smooth transitions and micro-interactions  
 ✅ **Financial Goals** - Targets with balance-based progress bars  
+✅ **Resizable Item Cards** - Small, Medium, and Large sizes adjust transaction and goal cards  
 ✅ **Account Storage** - Email/password accounts with guest data migration  
 ✅ **Responsive Module Workspace** - Larger desktop and mobile-friendly module modal  
 
@@ -309,7 +343,7 @@ Every module is highly customizable through code. Module metadata, components, s
 
 ### Purpose
 
-The Wishlist module is a catalogue for things a user wants to remember, plan for, or eventually purchase. It supports fixed-size catalogue cards, richer item detail views, media, links, notes, prices, target dates, completion, and a complete change history.
+The Wishlist module is a catalogue for things a user wants to remember, plan for, or eventually purchase. It supports resizable catalogue cards, richer item detail views, media, links, notes, prices, target dates, completion, and a complete change history.
 
 ### Structure
 ```
@@ -351,7 +385,7 @@ src/modules/wishlist/
 
 ### Features Implemented
 
-✅ **Fixed Catalogue Cards** - Cards remain the same size as item count changes  
+✅ **Resizable Catalogue Cards** - Small, Medium, and Large controls adjust card dimensions without changing item data  
 ✅ **Media** - Image, GIF, and video URLs with larger media in detail view  
 ✅ **Media Upload and Positioning** - Local image/GIF/video uploads are stored as data URLs and can be dragged to choose their crop position  
 ✅ **Hover Media Playback** - GIFs and videos load/play on hover or keyboard focus and stop when leaving  
@@ -361,7 +395,8 @@ src/modules/wishlist/
 ✅ **Completion** - Items can be completed and reopened  
 ✅ **History** - Added, edited, completed, reopened, and removed actions are recorded with compact media thumbnails  
 ✅ **Catalogue Deletion** - Each card has a confirmed Delete action; successful removals are recorded in history  
-✅ **Responsive Layout** - Fixed-size catalogue adapts to mobile without stretching cards  
+✅ **Responsive Layout** - All card sizes adapt to mobile without stretching cards  
+✅ **Independent Card Size Preference** - Wishlist card size is saved separately per account and module  
 ✅ **Account Storage** - Wishlist data uses the active account namespace  
 ✅ **Save Failure Recovery** - Failed storage writes restore the last persisted data and show an error instead of leaving unsaved changes in memory  
 ✅ **Media Preview State** - Add/Edit forms reset stale drafts; pasted URLs, media type changes, and uploads update the crop preview  
@@ -435,6 +470,7 @@ src/modules/countdowns/
 ✅ **Media Presentation** - Saved media appears in the featured countdown and list row
 ✅ **Account Storage** - Countdown data uses the active account namespace
 ✅ **Fixed Workspace** - List scrolls within a stable responsive module height
+✅ **Resizable Countdown Cards** - Small, Medium, and Large controls independently adjust list-row density and media size
 ✅ **Timer Cleanup** - The live update interval stops when its module modal is removed
 
 ### CountdownsService API
@@ -557,10 +593,12 @@ Wishlist targets contain the same game/character/art fields with `targetAt: ISO8
 ✅ **Custom Artwork** - Replace automatic artwork with an image URL or local image upload; reset to game artwork at any time
 ✅ **Artwork Framing** - Drag to pan and use the shared 1×–2.5× scale slider; saved framing carries from the wishlist into the registry
 ✅ **Owned Registry** - Add, edit, search, filter by game, and remove characters
+✅ **Owned Counts by Game** - Show separate Genshin Impact and Zenless Zone Zero roster totals, alongside the wishlist total  
 ✅ **Character Wishlist** - Separate target list with optional notes and dates
 ✅ **Independent Target Countdown** - Days, hours, minutes, and seconds for each wishlist date; “Got them” moves the target into the registry
 ✅ **Image Fallback** - If remote artwork is unavailable, display a character-initial placeholder while retaining the custom-image controls
 ✅ **Account Storage** - Roster and wishlist targets use the active account namespace
+✅ **Resizable Character Cards** - Small, Medium, and Large preferences resize both registry and character-wishlist cards
 ✅ **Responsive Workspace** - Fixed-height scrolling workspace with responsive character cards and editor
 
 ### GachaService API
@@ -642,7 +680,7 @@ src/modules/bookmarks/
 
 ### Features Implemented
 
-✅ **Visual Catalogue** - Fixed-size cards with media-first presentation  
+✅ **Visual Catalogue** - Media-first featured and quick-access cards with Small, Medium, and Large size controls  
 ✅ **Distinct Reference Shelf UI** - Featured bookmark presentation, compact quick-access rows, and a timeline history instead of the Wishlist catalogue structure  
 ✅ **Bookmark Links** - Required URL with an open-in-new-tab detail action  
 ✅ **Descriptions** - Optional explanatory text shown on cards and detail views  
@@ -654,6 +692,7 @@ src/modules/bookmarks/
 ✅ **Detail View** - Larger media and complete bookmark information  
 ✅ **History** - Added, edited, and removed actions with compact thumbnails  
 ✅ **Account Storage** - Uses the active account namespace without changing Finance or Wishlist data  
+✅ **Independent Card Size Preference** - Bookmark card sizing is saved per account without affecting other modules  
 ✅ **Themes and Animations** - Uses shared themes, card entrances, overlay transitions, and responsive rules
 
 ### BookmarksService API
@@ -830,6 +869,8 @@ Each module manages its own data through a dedicated service:
 - (Future) NotesService → `simpledash_notes_data`
 - (Future) TasksService → `simpledash_tasks_data`
 
+Card size is a separate UI preference, not part of module item data. `src/utilities/cardSizeUtils.js` stores each setting under `card-size-{moduleId}` through the account-scoped StorageService key namespace. Supported values are `small`, `medium`, and `large`; the current modules with preferences are `finance`, `wishlist`, `bookmarks`, `countdowns`, and `gacha`. A module's setting does not affect any other module, and it is restored when the component is opened again.
+
 ### Future Backend Integration
 
 To migrate to a backend/database:
@@ -961,7 +1002,7 @@ No testing framework currently implemented. Recommended:
 ✅ Legacy-history migration check: embedded media URLs are removed from existing Wishlist and Bookmarks history and the cleaned data persists  
 ✅ Shared image preprocessing check: ordinary images are resized and emitted as WebP; uploads use the shared helper across Wishlist, Bookmarks, Countdowns, and Gacha  
 ✅ `node --check` passes for all JavaScript files after the storage/media changes  
-✅ Catalogue cards remain fixed-size on desktop and mobile  
+✅ Card-size controls update the visible item-card dimensions and persist independent Finance, Wishlist, Bookmarks, Countdowns, and Gacha choices  
 ✅ Theme selection applies shared tokens across modules and persists per account  
 ✅ Module, Settings, Finance, and Wishlist overlays show coordinated close animations  
 ✅ Wishlist section changes keep the body stable and do not flash visible scrollbars  
