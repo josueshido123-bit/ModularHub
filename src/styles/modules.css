@@ -195,8 +195,8 @@
 .wishlist-progress-fill { height: 100%; background: var(--color-success); border-radius: inherit; transition: width var(--transition-base); }
 .wishlist-card-body small { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
 .wishlist-countdown, .wishlist-detail-countdown { color: var(--color-primary-light); font-size: var(--font-size-xs); }
-.wishlist-card-actions { flex-wrap: wrap; margin-top: auto; }
-.wishlist-card-actions .btn { flex: 0 0 auto; height: 28px; padding-inline: var(--space-sm); white-space: nowrap; }
+.wishlist-card-actions { min-width: 0; flex-wrap: nowrap; gap: 4px; margin-top: auto; }
+.wishlist-card-actions .btn { flex: 1 1 0; min-width: 0; height: 28px; padding-inline: 2px; font-size: .56rem; white-space: nowrap; }
 .wishlist-empty { grid-column: 1 / -1; padding: var(--space-2xl); color: var(--color-text-tertiary); text-align: center; }
 .wishlist-form-modal, .wishlist-detail-modal { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: var(--space-lg); background: rgba(0, 0, 0, .72); backdrop-filter: blur(4px); animation: fadeIn 180ms ease-out; }
 .wishlist-form-panel, .wishlist-detail-panel { position: relative; width: min(680px, 100%); max-height: 90vh; overflow-y: auto; padding: var(--space-xl); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); animation: modalSlideIn 220ms ease; }
@@ -253,7 +253,7 @@
 .countdowns-filter span { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
 .countdowns-list-caption { color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
 .countdowns-list { display: flex; flex-direction: column; gap: var(--space-sm); overflow-y: auto; padding: 2px; }
-.countdowns-card { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(210px, .85fr) auto; align-items: center; gap: var(--space-lg); min-height: 112px; padding: var(--space-md) var(--space-lg); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); transition: min-height var(--transition-slow), grid-template-columns var(--transition-slow); animation: wishlistItemEnter 260ms ease-out both; }
+.countdowns-card { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(210px, .85fr) auto; align-items: center; flex: 0 0 auto; gap: var(--space-lg); min-height: 112px; padding: var(--space-md) var(--space-lg); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); transition: min-height var(--transition-slow), grid-template-columns var(--transition-slow); animation: wishlistItemEnter 260ms ease-out both; }
 .countdowns-card.has-media { grid-template-columns: 72px minmax(120px, 1fr) minmax(210px, .85fr) auto; }
 .countdowns-card-media { width: 72px; height: 72px; overflow: hidden; background: var(--color-bg-tertiary); border-radius: var(--radius-sm); }
 .countdowns-card-media img, .countdowns-card-media video, .countdowns-card-media .countdowns-media-frame { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -262,7 +262,8 @@
 .countdowns-card-date { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
 .countdowns-card-copy h3 { margin: var(--space-xs) 0; font-size: var(--font-size-base); overflow-wrap: anywhere; }
 .countdowns-card-copy p { overflow: hidden; color: var(--color-text-tertiary); font-size: var(--font-size-sm); text-overflow: ellipsis; white-space: nowrap; }
-.countdowns-card-actions { display: flex; align-self: start; gap: var(--space-sm); }
+.countdowns-card-actions { display: flex; min-width: 0; align-self: start; flex-wrap: nowrap; gap: var(--space-sm); }
+.countdowns-card-actions .btn { flex: 1 1 0; min-width: 0; padding-inline: clamp(3px, 1vw, var(--space-sm)); white-space: nowrap; }
 .countdowns-card-timer .countdowns-units { gap: 3px; }
 .countdowns-card-timer .countdowns-units strong { font-size: var(--font-size-base); }
 .countdowns-card-timer .countdowns-units span { font-size: .55rem; }
@@ -309,7 +310,7 @@
     .countdowns-card.has-media .countdowns-card-actions { grid-column: 2; grid-row: 3; justify-content: flex-end; }
     .countdowns-card-timer { grid-column: 1 / -1; grid-row: 2; }
     .countdowns-card-actions { grid-column: 2; grid-row: 1; }
-    .countdowns-card-actions .btn { padding-inline: var(--space-sm); }
+    .countdowns-card-actions .btn { padding-inline: clamp(3px, 1vw, var(--space-sm)); }
     .countdowns-list-toolbar { align-items: flex-end; }
     .countdowns-list-toolbar { flex-wrap: wrap; }
     .countdowns-filters { gap: var(--space-sm); }
@@ -349,8 +350,8 @@
 .gacha-card-copy h4 { margin: var(--space-xs) 0 0; font-size: var(--font-size-base); overflow-wrap: anywhere; }
 .gacha-card-copy p { display: -webkit-box; width: 100%; overflow: hidden; margin: 0; color: var(--color-text-tertiary); font-size: var(--font-size-xs); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .gacha-card-note { opacity: .85; }
-.gacha-card-actions { justify-content: flex-start; flex-wrap: wrap; gap: var(--space-sm); padding: 0 var(--space-sm) var(--space-md); }
-.gacha-card-actions .btn { flex: 0 0 auto; height: 28px; min-width: 0; padding-inline: var(--space-sm); white-space: nowrap; }
+.gacha-card-actions { min-width: 0; justify-content: flex-start; flex-wrap: nowrap; gap: var(--space-xs); padding: 0 var(--space-sm) var(--space-md); }
+.gacha-card-actions .btn { flex: 1 1 0; height: 28px; min-width: 0; padding-inline: clamp(2px, .7vw, var(--space-sm)); font-size: clamp(.6rem, 1vw, var(--font-size-sm)); white-space: nowrap; }
 .gacha-target-card { grid-template-rows: 164px minmax(150px, 1fr) auto; }
 .gacha-target-timer { width: 100%; margin-top: auto; padding-top: var(--space-sm); }
 .gacha-timer-label { display: block; margin-bottom: var(--space-xs); color: var(--color-primary-light); font-size: .62rem; font-weight: var(--font-weight-semibold); }
@@ -426,7 +427,8 @@
 .bookmarks-featured-info { display: flex; flex-direction: column; justify-content: center; gap: var(--space-md); padding: var(--space-xl); }
 .bookmarks-featured-info h2 { margin: 0; }
 .bookmarks-featured-info p { margin: 0; color: var(--color-text-secondary); }
-.bookmarks-featured-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-md); }
+.bookmarks-featured-actions { display: flex; flex-wrap: nowrap; gap: var(--space-xs); margin-top: var(--space-md); }
+.bookmarks-featured-actions .btn { flex: 1 1 0; min-width: 0; padding-inline: clamp(2px, 1vw, var(--space-sm)); font-size: clamp(.6rem, 1.1vw, var(--font-size-sm)); white-space: nowrap; }
 .bookmarks-quick-list { margin-top: var(--space-md); }
 .bookmarks-quick-item { display: grid; grid-template-columns: 72px 1fr auto; width: auto; height: auto; gap: var(--space-md); align-items: center; min-height: 76px; padding: var(--space-sm) var(--space-md); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); transition: min-height var(--transition-slow), grid-template-columns var(--transition-slow); animation: wishlistItemEnter 300ms ease-out both; }
 .bookmarks-quick-item:hover { border-color: var(--color-primary); transform: translateX(3px); }
@@ -880,12 +882,25 @@
 .wishlist-module-content[data-card-size="large"] .wishlist-catalogue { grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); grid-auto-rows: 420px; }
 .wishlist-module-content[data-card-size="large"] .wishlist-card { width: 100%; height: 420px; }
 
-.countdowns-module-content[data-card-size="small"] .countdowns-card { min-height: 84px; }
-.countdowns-module-content[data-card-size="large"] .countdowns-card { min-height: 148px; }
+.countdowns-module-content[data-card-size="small"] .countdowns-card { min-height: 88px; gap: var(--space-md); padding: var(--space-sm) var(--space-md); }
+.countdowns-module-content[data-card-size="small"] .countdowns-card-timer .countdowns-units > div { padding: 3px 2px; }
+.countdowns-module-content[data-card-size="small"] .countdowns-card-timer .countdowns-units strong { font-size: .78rem; }
+.countdowns-module-content[data-card-size="small"] .countdowns-card-timer .countdowns-units span { font-size: .48rem; }
+.countdowns-module-content[data-card-size="small"] .countdowns-card-timer .countdowns-timer-state { font-size: .52rem; }
+.countdowns-module-content[data-card-size="large"] .countdowns-card { min-height: 160px; padding: var(--space-lg) var(--space-xl); }
+.countdowns-module-content[data-card-size="large"] .countdowns-card-timer .countdowns-units > div { padding: var(--space-md) var(--space-sm); }
+.countdowns-module-content[data-card-size="large"] .countdowns-card-timer .countdowns-units strong { font-size: 1.35rem; }
+.countdowns-module-content[data-card-size="large"] .countdowns-card-timer .countdowns-units span { font-size: .68rem; }
+.countdowns-module-content[data-card-size="large"] .countdowns-card-timer .countdowns-timer-state { font-size: .68rem; }
 
 .gacha-module-content[data-card-size="small"] .gacha-character-grid[data-card-view="roster"] { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 .gacha-module-content[data-card-size="small"] .gacha-character-card { grid-template-rows: 125px minmax(70px, 1fr) auto; min-height: 250px; }
-.gacha-module-content[data-card-size="small"] .gacha-character-grid[data-card-view="targets"] { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.gacha-module-content[data-card-size="small"] .gacha-character-grid[data-card-view="targets"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 170px)); }
+.gacha-module-content[data-card-size="small"] .gacha-target-card { grid-template-rows: 125px minmax(120px, 1fr) auto; min-height: 270px; }
+.gacha-module-content[data-card-size="small"] .gacha-target-card .gacha-card-copy { padding: var(--space-sm); }
+.gacha-module-content[data-card-size="small"] .gacha-target-card .gacha-timer-units strong { font-size: .7rem; }
+.gacha-module-content[data-card-size="small"] .gacha-target-card .gacha-timer-units small { font-size: .5rem; }
+.gacha-module-content[data-card-size="small"] .gacha-target-card .gacha-card-actions .btn { padding-inline: 2px; font-size: .55rem; }
 .gacha-module-content .gacha-character-grid[data-card-view="targets"] { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
 .gacha-module-content[data-card-size="large"] .gacha-character-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
 .gacha-module-content[data-card-size="large"] .gacha-character-card { grid-template-rows: 220px minmax(100px, 1fr) auto; min-height: 370px; }

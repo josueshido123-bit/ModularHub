@@ -105,7 +105,7 @@ Modules with category `gacha` render in a separate dashboard section under a cen
 - Reusable Small / Medium / Large control for modules with explicitly sized user-created item cards
 - Saves a separate account-scoped preference for each module ID; Finance, Wishlist, Bookmarks, Countdowns, and Gacha already use it
 - Restores the selected size whenever a module is reopened; reports when a preference cannot be saved
-- Sets `data-card-size` on the module content root; size rules must target the intended card containers only, never unrelated module elements or card action buttons
+- Sets `data-card-size` on the module content root; size rules target the intended card containers and may compact only their action buttons as needed to keep controls visible in one row
 - Keeps the size control available only in views that display those cards; card size never changes module data or dashboard launcher cards
 
 ---
@@ -1037,6 +1037,11 @@ No testing framework currently implemented. Recommended:
 ✅ 2026-10-11 drag responsiveness follow-up: disabled image/video transform transitions inside all four media editors so live pointer updates track the cursor immediately; card-display hover transitions remain unchanged
 ✅ 2026-10-11 drag release follow-up: shared media drag captures the active pointer so releasing outside the preview does not synthesize a backdrop click or close the edit form
 ✅ Live-tested release outside the edit panel in Wishlist, Bookmarks, Countdowns, and Gacha: each form stayed open, captured the pointer, and retained the draft pan position; canceled every test without saving
+✅ 2026-10-11 card-sizing follow-up: Wishlist Edit / Complete / Delete actions stay visible on one row at Small and Medium sizes; Countdown cards no longer shrink below their content and hide lower actions; Bookmark featured actions and Gacha target actions stay on one row
+✅ Countdown Small / Medium / Large sizes also visibly change card height and counter typography; Gacha Character Wishlist Small cards are distinctly narrower and shorter than Medium cards
+✅ Live-tested Wishlist actions at 320px, 390px, 768px, and 1280px; all three labels fit on one row at Small and Medium sizes and the saved size remained unchanged
+✅ Live-tested Countdown media-card actions and Bookmark featured actions at 320px, 390px, 768px, and 1280px using temporary in-memory DOM fixtures; controls stayed inside their cards on one row
+✅ Live-tested Gacha wishlist actions at 320px, 390px, 768px, and 1280px across Small / Medium / Large; all labels stayed on one row, and the original selected size was restored
 
 ---
 
@@ -1079,7 +1084,7 @@ No testing framework currently implemented. Recommended:
 ### 7. Responsive layout and live acceptance
 - Keep overlays and anchored panels inside the visible viewport at narrow widths; size inner form controls to the available content width rather than viewport width.
 - Keep module icons, titles, and close controls aligned consistently when headers become narrow.
-- Verify card-size changes at small phone, large phone, tablet, and desktop widths. Check that card action controls remain inside their card and that unrelated content does not change size.
+- Verify card-size changes at small phone, large phone, tablet, and desktop widths. Check that every card action stays visible inside its card on a single row, including the Wishlist Delete action, and that unrelated content does not change size.
 - Media crop positions are intentionally unbounded: users can drag an image beyond the preview's initial 0–100% position range to fine-tune its crop. `normalizeMediaPosition()` must preserve finite negative or greater-than-100 coordinates, and `bindMediaEditor()` must keep zoom controls connected to whichever preview is currently mounted.
 - Media editor image/video transforms must not have CSS transitions: pointer-driven transform updates should follow the cursor directly. Keep any decorative transitions scoped to non-editor module cards.
 - Media editor drag handlers must capture the active pointer on pointerdown so pointerup outside the preview remains targeted to the editor and cannot accidentally activate modal backdrop dismissal.
