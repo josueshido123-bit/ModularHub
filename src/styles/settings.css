@@ -10,6 +10,11 @@
     max-width: 600px;
 }
 
+.settings-panel select {
+    width: 100%;
+    min-width: 0;
+}
+
 .settings-content {
     display: flex;
     flex-direction: column;

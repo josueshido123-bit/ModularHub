@@ -2,7 +2,7 @@
 
 > A polished, modern, highly extensible dashboard web application with a modular architecture.
 
-**Last Updated:** 2026-10-07  
+**Last Updated:** 2026-10-11  
 **Version:** 1.4.3  
 **Status:** MVP with account-scoped Finance, Wishlist, Bookmarks, Countdowns, and Gacha Character Registry modules plus an in-app notification system
 
@@ -102,11 +102,11 @@ Modules with category `gacha` render in a separate dashboard section under a cen
 - Preserves GIF, SVG, and video uploads in their original data-URL form; these formats can still consume substantial browser storage
 
 #### 8. **Card Size Utilities** (`src/utilities/cardSizeUtils.js`)
-- Reusable Small / Medium / Large control for every module that displays user-created item cards
+- Reusable Small / Medium / Large control for modules with explicitly sized user-created item cards
 - Saves a separate account-scoped preference for each module ID; Finance, Wishlist, Bookmarks, Countdowns, and Gacha already use it
 - Restores the selected size whenever a module is reopened; reports when a preference cannot be saved
-- Sets `data-card-size` on the module content root so the shared `.resizable-card-grid`, `.resizable-item-card`, and `.resizable-item-card-media` classes can apply the standard responsive sizing tokens
-- Modules with specialized layouts can keep their own CSS and target their root's `[data-card-size]` value; card size never changes module data or dashboard launcher cards
+- Sets `data-card-size` on the module content root; size rules must target the intended card containers only, never unrelated module elements or card action buttons
+- Keeps the size control available only in views that display those cards; card size never changes module data or dashboard launcher cards
 
 ---
 
@@ -1018,6 +1018,25 @@ No testing framework currently implemented. Recommended:
 ✅ Fresh acceptance pass migrated representative Finance, Wishlist, and Bookmarks data into a new account without loss  
 ✅ Fresh acceptance pass opened all modules, verified stable section heights, mobile viewport bounds, theme switching, and Settings close animation  
 ✅ JavaScript syntax checks and editor diagnostics pass across changed files
+✅ 2026-10-11 live responsive audit: dashboard, all five modules, Settings, notification tray, module tabs/filters, and module forms checked at 320px, 390px, 768px, and 1280px
+✅ Fixed mobile notification panel anchoring, which previously placed part of the panel beyond the left edge; verified the full panel stays within all four tested viewports
+✅ Fixed the shared modal animation-name collision and reduced oversized form-panel entrance movement
+✅ Kept module header icons, titles, and close buttons on a consistent row on narrow screens
+✅ Fixed Finance initial-balance input sizing, Settings theme-select horizontal overflow, and narrow Gacha artwork controls
+✅ Wishlist, Bookmarks, Countdown, and Gacha create-form panels and their visible fields stay within 320px and 390px viewports
+✅ Rechecked Small / Medium / Large card sizing for populated Bookmarks, Countdown, and Gacha cards across four viewport widths; text, actions, and module bounds remain intact
+✅ Added smooth transitions to item-card dimensions and grid tracks without resizing card action buttons
+✅ Verified card-size transitions run at 300ms with reduced motion disabled and remain suppressed when the browser requests reduced motion; restored all tested card-size preferences to their original Small setting
+✅ Exercised Wishlist history, Bookmarks library/history, Countdown filters, Gacha search/game filters/tabs, all four themes, Settings, Notifications, and data export/import
+✅ Verified export/import backup shape and successfully imported an in-memory copy of the current backup; restored the exact seven-key localStorage snapshot afterward
+✅ Verified current user data and the single existing unread Countdown notification were preserved; no app data was cleared or overwritten
+✅ 2026-10-11 media-editor audit: unrestricted pan and zoom tested live in Wishlist, Bookmarks, Countdowns, and Gacha at 320px, 390px, and 1280px
+✅ Media crop dragging now allows positions below 0% and above 100% in every direction; zoom transforms and the visible scale indicator continue updating after media previews are replaced
+✅ Fixed the shared zoom-slider binding so rebuilt Wishlist, Bookmarks, and Countdown previews respond to zoom changes rather than retaining a handler for a removed preview
+✅ Media-editor acceptance tests used unsaved inline test artwork and canceled each form; existing stored media, records, notifications, and preferences were not edited
+✅ 2026-10-11 drag responsiveness follow-up: disabled image/video transform transitions inside all four media editors so live pointer updates track the cursor immediately; card-display hover transitions remain unchanged
+✅ 2026-10-11 drag release follow-up: shared media drag captures the active pointer so releasing outside the preview does not synthesize a backdrop click or close the edit form
+✅ Live-tested release outside the edit panel in Wishlist, Bookmarks, Countdowns, and Gacha: each form stayed open, captured the pointer, and retained the draft pan position; canceled every test without saving
 
 ---
 
@@ -1056,6 +1075,17 @@ No testing framework currently implemented. Recommended:
 - Modules can subscribe to data changes
 - Reactive updates without re-rendering entire app
 - Scalable state management
+
+### 7. Responsive layout and live acceptance
+- Keep overlays and anchored panels inside the visible viewport at narrow widths; size inner form controls to the available content width rather than viewport width.
+- Keep module icons, titles, and close controls aligned consistently when headers become narrow.
+- Verify card-size changes at small phone, large phone, tablet, and desktop widths. Check that card action controls remain inside their card and that unrelated content does not change size.
+- Media crop positions are intentionally unbounded: users can drag an image beyond the preview's initial 0–100% position range to fine-tune its crop. `normalizeMediaPosition()` must preserve finite negative or greater-than-100 coordinates, and `bindMediaEditor()` must keep zoom controls connected to whichever preview is currently mounted.
+- Media editor image/video transforms must not have CSS transitions: pointer-driven transform updates should follow the cursor directly. Keep any decorative transitions scoped to non-editor module cards.
+- Media editor drag handlers must capture the active pointer on pointerdown so pointerup outside the preview remains targeted to the editor and cannot accidentally activate modal backdrop dismissal.
+- Acceptance test: in every media-enabled module, drag from the preview and release over the overlay outside the edit panel; verify the form remains open and draft position updates, then cancel without saving.
+- Live-test navigation, forms, filters, themes, notifications, and backup export/import alongside visual layout changes. Use a captured localStorage snapshot for any import or other operation that writes test data, and restore it exactly afterward.
+- Shared keyframe names must remain unique when components have different motion patterns; module modal entry uses `moduleModalEnter`, while nested module forms use the shorter `modalSlideIn`.
 
 ---
 

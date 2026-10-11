@@ -61,7 +61,7 @@ function readFileAsDataUrl(file) {
 export function normalizeMediaPosition(position = '50% 50%') {
     const values = String(position || '50% 50%').split(/\s+/).slice(0, 2).map(value => {
         const parsed = Number.parseFloat(value);
-        return `${Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 50}%`;
+        return `${Number.isFinite(parsed) ? parsed : 50}%`;
     });
     return `${values[0] || '50%'} ${values[1] || '50%'}`;
 }
@@ -76,7 +76,9 @@ export function mediaTransform(position = '50% 50%', scale = DEFAULT_MEDIA_SCALE
     const x = Number.parseFloat(xValue);
     const y = Number.parseFloat(yValue);
     const zoom = normalizeMediaScale(scale);
-    return `translate3d(${(x - 50) * (zoom - 1)}%, ${(y - 50) * (zoom - 1)}%, 0) scale(${zoom})`;
+    const translateX = Number(((x - 50) * (zoom - 1)).toFixed(3));
+    const translateY = Number(((y - 50) * (zoom - 1)).toFixed(3));
+    return `translate3d(${translateX}%, ${translateY}%, 0) scale(${zoom})`;
 }
 
 export function mediaStyle(position = '50% 50%', size = 'card', scale = DEFAULT_MEDIA_SCALE) {
@@ -130,23 +132,31 @@ export function ensureMediaScaleControl(container, editor, initialScale = DEFAUL
     return { positionInput, scaleInput, scaleOutput };
 }
 
-export function bindMediaEditor(editor, positionInput, scaleInput, scaleOutput = null) {
-    const applyTransform = () => {
-        const media = editor.querySelector('img, video');
-        if (!media) return;
-        const position = normalizeMediaPosition(positionInput?.value || editor.dataset.position);
-        const scale = normalizeMediaScale(scaleInput?.value);
-        media.style.transform = mediaTransform(position, scale);
-        editor.dataset.position = position;
-        editor.dataset.scale = String(scale);
-        if (scaleOutput) scaleOutput.value = `${Math.round(scale * 100)}%`;
-    };
+const scaleEditorBindings = new WeakMap();
 
-    if (scaleInput && scaleInput.dataset.mediaScaleBound !== 'true') {
-        scaleInput.dataset.mediaScaleBound = 'true';
-        scaleInput.addEventListener('input', applyTransform);
+function applyMediaTransform(editor, positionInput, scaleInput, scaleOutput) {
+    const media = editor?.querySelector('img, video');
+    if (!media) return;
+    const position = normalizeMediaPosition(positionInput?.value || editor.dataset.position);
+    const scale = normalizeMediaScale(scaleInput?.value);
+    media.style.transform = mediaTransform(position, scale);
+    editor.dataset.position = position;
+    editor.dataset.scale = String(scale);
+    if (scaleOutput) scaleOutput.value = `${Math.round(scale * 100)}%`;
+}
+
+export function bindMediaEditor(editor, positionInput, scaleInput, scaleOutput = null) {
+    if (scaleInput) {
+        scaleEditorBindings.set(scaleInput, { editor, positionInput, scaleOutput });
+        if (scaleInput.dataset.mediaScaleBound !== 'true') {
+            scaleInput.dataset.mediaScaleBound = 'true';
+            scaleInput.addEventListener('input', () => {
+                const binding = scaleEditorBindings.get(scaleInput);
+                if (binding) applyMediaTransform(binding.editor, binding.positionInput, scaleInput, binding.scaleOutput);
+            });
+        }
     }
-    applyTransform();
+    applyMediaTransform(editor, positionInput, scaleInput, scaleOutput);
 
     if (!editor || editor.dataset.bound === 'true' || !editor.querySelector('img, video')) return;
     editor.dataset.bound = 'true';
@@ -157,6 +167,7 @@ export function bindMediaEditor(editor, positionInput, scaleInput, scaleOutput =
         const scale = normalizeMediaScale(scaleInput?.value);
         if (scale <= MIN_MEDIA_SCALE) return;
         event.preventDefault();
+        editor.setPointerCapture(event.pointerId);
         const rect = editor.getBoundingClientRect();
         const startX = event.clientX;
         const startY = event.clientY;
@@ -168,12 +179,12 @@ export function bindMediaEditor(editor, positionInput, scaleInput, scaleOutput =
             const currentScale = normalizeMediaScale(scaleInput?.value);
             const panFactor = currentScale - 1;
             if (panFactor <= 0) return;
-            const x = Math.max(0, Math.min(100, startPositionX + ((moveEvent.clientX - startX) / rect.width) * (100 / panFactor)));
-            const y = Math.max(0, Math.min(100, startPositionY + ((moveEvent.clientY - startY) / rect.height) * (100 / panFactor)));
-            const position = `${Math.round(x)}% ${Math.round(y)}%`;
+            const x = startPositionX + ((moveEvent.clientX - startX) / rect.width) * (100 / panFactor);
+            const y = startPositionY + ((moveEvent.clientY - startY) / rect.height) * (100 / panFactor);
+            const position = `${Number(x.toFixed(2))}% ${Number(y.toFixed(2))}%`;
             if (positionInput) positionInput.value = position;
             editor.dataset.position = position;
-            applyTransform();
+            applyMediaTransform(editor, positionInput, scaleInput, scaleOutput);
         };
         const stop = stopEvent => {
             if (stopEvent.pointerId !== pointerId) return;
